@@ -1,0 +1,39 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.*
+
+# build output
+.next/
+out/
+build/
+dist/
+
+# generated
+*.tsbuildinfo
+next-env.d.ts
+.vercel/
+
+# test artifacts
+coverage/
+playwright-report/
+test-results/
+blob-report/
+.playwright/
+
+# env — never commit secrets (TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET, etc.)
+.env
+.env*.local
+!.env.example
+
+# gstack — installed globally, not vendored
+.claude/skills/gstack/
+
+# local agent state
+.claude/settings.local.json
+
+# os / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/

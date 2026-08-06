@@ -1,0 +1,65 @@
+{
+  "_comment": "Committed fallback so the hero always renders, even on a first deploy against a broken feed. Real episodes pulled from the channel feed 2026-08-06. Refresh occasionally; staleness here is invisible in normal operation because the live feed wins.",
+  "episodes": [
+    {
+      "id": "ZdpcSOmWK3Y",
+      "title": "Professional Philosopher: Is AI Doom Actually Logical? | Casey Hart",
+      "published": "2026-08-05T00:00:00+00:00"
+    },
+    {
+      "id": "PP9mUUBHjzA",
+      "title": "The Harsh Reality of Modern Dating & Finding the Love You Actually Want | Clift Roach",
+      "published": "2026-07-31T00:00:00+00:00"
+    },
+    {
+      "id": "LvAoX55iFOU",
+      "title": "Exposing the Gambling Crisis | MKAndy",
+      "published": "2026-07-29T00:00:00+00:00"
+    },
+    {
+      "id": "KdS09vmeHJI",
+      "title": "What Happens After the AI Bubble Pops | Paul Kedrosky",
+      "published": "2026-07-24T00:00:00+00:00"
+    },
+    {
+      "id": "ZIfnd1GthVc",
+      "title": "Nothing is Broken, This Is Capitalism Working Exactly as Designed | Radhika Desai",
+      "published": "2026-07-22T00:00:00+00:00"
+    },
+    {
+      "id": "QmbZRsgj2DM",
+      "title": "Is The AI Bubble Finally Popping?",
+      "published": "2026-07-17T00:00:00+00:00"
+    },
+    {
+      "id": "hOK1BM3EEhg",
+      "title": "Why 90% of Women Chase the Top 1% of Men | The Jaunt",
+      "published": "2026-07-15T00:00:00+00:00"
+    },
+    {
+      "id": "IXHCuAsAIlw",
+      "title": "Ex-Teacher on The Collapse of Education: Teacher Burnout, Cellphones & AI",
+      "published": "2026-07-10T00:00:00+00:00"
+    },
+    {
+      "id": "qcefpsOMtVQ",
+      "title": "Why Literally Everything Feels So Broken",
+      "published": "2026-07-08T00:00:00+00:00"
+    },
+    {
+      "id": "1RQTR1JyMDU",
+      "title": "Bitcoin Was Made for This Moment",
+      "published": "2026-07-03T00:00:00+00:00"
+    },
+    {
+      "id": "uGGvaUNeiL8",
+      "title": "The Global Reset, Fighting the Corrupt System & Bitcoin's New Role | Tom Luongo",
+      "published": "2026-07-01T00:00:00+00:00"
+    },
+    {
+      "id": "b6LNraOybPk",
+      "title": "Licensed Men's Therapist on Solving the Masculinity Crisis | Trey Tucker",
+      "published": "2026-06-24T00:00:00+00:00"
+    }
+  ]
+}

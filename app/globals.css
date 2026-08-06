@@ -1,0 +1,55 @@
+@import "tailwindcss";
+@import "../styles/tokens.css";
+
+/* The background is two gradients on one fixed element that never re-renders.
+ * No filter: blur() anywhere — it forces a full-viewport repaint, and the
+ * softness it bought in Figma is cheaper to bake into the gradient stops. */
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+  body {
+    background-color: var(--mm-base);
+    color: var(--mm-text);
+    font-family: var(--mm-font-display);
+    -webkit-font-smoothing: antialiased;
+  }
+  .mm-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: radial-gradient(
+        60% 45% at 50% 38%,
+        rgb(255 0 0 / 14%) 0%,
+        rgb(255 0 0 / 5%) 45%,
+        transparent 72%
+      ),
+      repeating-linear-gradient(
+        to right,
+        var(--mm-grid-line) 0 1px,
+        transparent 1px var(--mm-size-grid-cell)
+      ),
+      repeating-linear-gradient(
+        to bottom,
+        var(--mm-grid-line) 0 1px,
+        transparent 1px var(--mm-size-grid-cell)
+      );
+  }
+  /* Perimeter squares fall away so the grid reads brightest behind the hero. */
+  .mm-backdrop::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      75% 60% at 50% 35%,
+      transparent 0%,
+      transparent 55%,
+      var(--mm-base) 100%
+    );
+  }
+  :focus-visible {
+    outline: 2px solid var(--mm-accent);
+    outline-offset: 3px;
+  }
+}
