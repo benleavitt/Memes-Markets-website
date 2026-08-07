@@ -55,9 +55,8 @@ gstack decision log (`gstack-decision-search`), not here.
 - [ ] Mobile: the player is `hidden sm:block`. The brief wants it docked to a slim
       bottom bar under 640px — not built yet.
 
-## Phase 4 — About, meme wall
+## Phase 4 — About
 - [ ] About: hosts (photos in `Assets/`), "as heard on", footer
-- [ ] Meme wall — **rewrite copy from the real feed**; current draft is off-brand
 - [ ] Trace the M logo to SVG and work it into header + footer
 
 ## Phase 5 — polish
@@ -71,8 +70,25 @@ gstack decision log (`gstack-decision-search`), not here.
       or capture with a provider that has an API and cross-post. Do not start until
       Phases 0-5 are done.
 
+## Cut
+
+**Meme wall — scrapped.** Never built in code. Removed from the Figma Home frame
+and the `meme/card` component deleted. It was written from the brief's topic list
+(collectibles, XRP, the petrodollar) and did not reflect the actual show, which is
+mostly dating, gambling, education and philosophy. Rewriting copy for a section
+nobody asked for was the wrong trade.
+
 ## Deferred / not in scope
-- CMS for the meme wall — a typed file is right until a non-developer needs to edit it
 - YouTube Data API — RSS covers 15 episodes with no key; only needed for view counts
 - Market ticker — removed from the design, `ticker/row` component left unused in Figma
 - `episode/card` and `sphere/tile` Figma components — superseded, still in the file
+- CMS for content — nothing on the site needs non-developer editing yet
+
+## Raised and declined (do not re-litigate)
+Offered as cuts alongside the meme wall, kept deliberately:
+- **Episode list on Home** stays, even though the orbit renders the same 12 as
+  server-side links. Home shows them twice by design.
+- **Newsletter capture** stays. Substack has no supported public API, so whatever
+  ships there will be an undocumented endpoint that can break silently.
+- **Mobile bottom-bar player** stays on the roadmap; the player is desktop-only
+  (`hidden sm:block`) until it is built.
