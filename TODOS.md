@@ -19,11 +19,15 @@ gstack decision log (`gstack-decision-search`), not here.
 - [ ] Compress host photos — 1.3MB and 2.4MB straight off a camera (Phase 4 needs them)
 - [ ] Raise or accept the JS budget: empty page is already 103kB First Load
 
-## Phase 1 — static Home (shippable on its own)
-- [ ] Wordmark measured to fit viewport width, tagline, platform bar, one CTA, footer
-- [ ] Background: grid via `repeating-linear-gradient`, glow via `radial-gradient`, no `filter: blur()`
-- [ ] Focus-visible states on every interactive element (missing from the Figma file — draw them)
-- [ ] Fix small-white-on-red contrast on the CTA
+## Phase 1 — static Home (shippable on its own) — DONE, branch `phase-1-static-home`
+- [x] Wordmark fitted to viewport width (pure CSS, ratio 10.186), tagline, platform bar, one CTA, footer
+- [x] Background: grid via `repeating-linear-gradient`, glow via `radial-gradient`, no `filter: blur()`
+- [x] Focus-visible states, skip link, reduced-motion guard
+- [x] Fixed small-white-on-red contrast — CTA label is 19px/700 to clear the large-text threshold
+- [x] About stub so the footer link is not a 404
+- [x] Episode list (pulled forward from Phase 2 — it is the always-works route to the content)
+- [x] Cropped the logo to its ink bounds; fixed mobile horizontal overflow
+- [ ] Merge to `main` and deploy a preview
 
 ## Phase 2 — the orbit
 - [ ] CSS 3D transform belt, 12 cards, `preserve-3d` + one `--spin` var
