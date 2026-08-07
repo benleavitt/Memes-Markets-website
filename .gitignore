@@ -41,3 +41,4 @@ Thumbs.db
 # local-only: routes npm scripts through bash so an "&" in the repo path
 # does not break .bin shims under cmd. Delete once the folder is renamed.
 .npmrc
+.gstack/

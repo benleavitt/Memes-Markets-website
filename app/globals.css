@@ -1,9 +1,14 @@
 @import "tailwindcss";
 @import "../styles/tokens.css";
 
-/* The background is two gradients on one fixed element that never re-renders.
- * No filter: blur() anywhere — it forces a full-viewport repaint, and the
- * softness it bought in Figma is cheaper to bake into the gradient stops. */
+/* tokens.css names the families the design calls for; next/font decides which
+ * actual files get served. Binding them here keeps the generated token file
+ * untouched while still pointing at the self-hosted faces. */
+:root {
+  --mm-font-display: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --mm-font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+}
+
 @layer base {
   html {
     color-scheme: dark;
@@ -13,17 +18,22 @@
     color: var(--mm-text);
     font-family: var(--mm-font-display);
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
+
+  /* Two gradients on one fixed element that never re-renders.
+   * No filter: blur() anywhere — it forces a full-viewport repaint every frame,
+   * and the softness it bought in Figma is free in the gradient stops. */
   .mm-backdrop {
     position: fixed;
     inset: 0;
     z-index: -1;
     pointer-events: none;
     background-image: radial-gradient(
-        60% 45% at 50% 38%,
-        rgb(255 0 0 / 14%) 0%,
-        rgb(255 0 0 / 5%) 45%,
-        transparent 72%
+        58% 42% at 50% 34%,
+        rgb(255 0 0 / 13%) 0%,
+        rgb(255 0 0 / 5%) 42%,
+        transparent 70%
       ),
       repeating-linear-gradient(
         to right,
@@ -36,20 +46,51 @@
         transparent 1px var(--mm-size-grid-cell)
       );
   }
-  /* Perimeter squares fall away so the grid reads brightest behind the hero. */
+  /* Perimeter squares fall away, so the grid reads brightest behind the hero
+   * and vanishes at the edges. This is the whole trick from the mock. */
   .mm-backdrop::after {
     content: "";
     position: absolute;
     inset: 0;
     background: radial-gradient(
-      75% 60% at 50% 35%,
+      72% 58% at 50% 32%,
       transparent 0%,
-      transparent 55%,
+      transparent 52%,
       var(--mm-base) 100%
     );
   }
+
+  /* The Figma file only ever drew hover states. Keyboard users get a real one. */
   :focus-visible {
     outline: 2px solid var(--mm-accent);
     outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  .mm-skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 50;
+    padding: 0.75rem 1.25rem;
+    background: var(--mm-surface-raised);
+    color: var(--mm-text);
+    border: 1px solid var(--mm-accent);
+    border-radius: var(--mm-radius-md);
+  }
+  .mm-skip-link:focus {
+    left: 1rem;
+    top: 1rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
