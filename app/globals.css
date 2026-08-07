@@ -94,3 +94,93 @@
     }
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * Hero orbit.
+ *
+ * The browser does the 3D. Cards are rotateY(i·30deg) translateZ(R) inside a
+ * preserve-3d parent, so position, perspective and back-to-front paint order all
+ * come from the compositor — we never sort anything.
+ *
+ * Turning the belt is one number, --spin. Depth cues read that same variable
+ * through CSS cos(), so nothing walks the twelve elements per frame; JS writes
+ * one custom property and the rest is style recalculation on the GPU path.
+ *
+ * Registering --spin and --facing with @property matters: it makes them real
+ * typed values rather than token substitution, so the arithmetic below resolves.
+ * If cos() ever fails to resolve, --facing falls back to its initial value of 1
+ * and every card simply renders at full opacity. Degraded, not broken.
+ * ------------------------------------------------------------------------- */
+@property --spin {
+  syntax: "<angle>";
+  inherits: true;
+  initial-value: 0deg;
+}
+@property --facing {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+
+:root {
+  --mm-orbit-r: 430px;
+  --mm-orbit-scale: 1;
+}
+
+.mm-orbit-stage {
+  position: relative;
+  width: 100%;
+  height: 540px;
+  perspective: 1500px;
+  /* Cards swing wider than the viewport at the sides. Without this the page
+     gains a horizontal scrollbar on every device. */
+  overflow: hidden;
+}
+
+.mm-orbit-belt {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform: scale(var(--mm-orbit-scale)) rotateX(-9deg) rotateY(var(--spin));
+  /* Vertical gestures still scroll the page; only horizontal drag turns the belt. */
+  touch-action: pan-y;
+  cursor: grab;
+}
+.mm-orbit-belt:active {
+  cursor: grabbing;
+}
+
+.mm-orbit-slot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 210px;
+  margin-left: -105px;
+  margin-top: -96px;
+  transform-style: preserve-3d;
+  transform: rotateY(var(--a)) translateZ(var(--mm-orbit-r));
+  /* The sphere is implied, not solid, so without this you see the BACKS of the far
+     cards — which renders their text mirrored and reads as a rendering bug. Hiding
+     the backface draws only the front arc, which is what a real carousel does. */
+  backface-visibility: hidden;
+  /* 1 when square-on to the viewer, 0 when directly behind the sphere */
+  --facing: calc((cos(var(--spin) + var(--a)) + 1) / 2);
+  opacity: calc(0.08 + 0.92 * var(--facing) * var(--facing));
+}
+
+/* Scaling the belt rather than shrinking the radius keeps the whole assembly in
+   proportion — a smaller radius with full-size cards just makes them overlap. */
+@media (max-width: 767px) {
+  :root {
+    --mm-orbit-scale: 0.62;
+  }
+  .mm-orbit-stage {
+    height: 360px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mm-orbit-belt {
+    transition: none;
+  }
+}

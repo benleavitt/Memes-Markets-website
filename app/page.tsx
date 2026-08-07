@@ -1,3 +1,4 @@
+import { OrbitSphere } from "@/components/hero/OrbitSphere";
 import { PlatformBar } from "@/components/hero/PlatformBar";
 import { Wordmark } from "@/components/hero/Wordmark";
 import { LiveCta } from "@/components/ui/LiveCta";
@@ -45,6 +46,27 @@ export default async function Home() {
         <div className="mt-12 px-6">
           <LiveCta />
         </div>
+
+        <div className="mt-10 w-full">
+          <OrbitSphere episodes={episodes} />
+        </div>
+
+        <p
+          className="type-mono-label mt-2 flex items-center gap-2.5"
+          style={{ color: "var(--mm-text-2)" }}
+        >
+          Drag to spin
+          <span
+            aria-hidden="true"
+            className="size-[5px] rounded-full"
+            style={{ background: "var(--mm-accent)" }}
+          />
+          <span style={{ color: "var(--mm-text-3)" }}>{episodes.length} episodes</span>
+          <span className="sr-only">
+            , or focus an episode and use the left and right arrow keys to turn the
+            carousel. Every episode is also listed below.
+          </span>
+        </p>
       </section>
 
       <section

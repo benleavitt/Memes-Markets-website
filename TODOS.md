@@ -29,14 +29,18 @@ gstack decision log (`gstack-decision-search`), not here.
 - [x] Cropped the logo to its ink bounds; fixed mobile horizontal overflow
 - [ ] Merge to `main` and deploy a preview
 
-## Phase 2 — the orbit
-- [ ] CSS 3D transform belt, 12 cards, `preserve-3d` + one `--spin` var
-- [ ] Depth via CSS `cos()`; scale + opacity + overlap only, **no blur** (D4)
-- [ ] Each card is a real `<a>` with the episode title as accessible name
-- [ ] Drag with momentum + snap; scroll while in view; arrow keys step one card
-- [ ] `prefers-reduced-motion`: no auto-spin, no momentum
-- [ ] Plain "All episodes" list below the fold as the non-JS route to content
+## Phase 2 — the orbit — DONE, branch `phase-2-orbit`
+- [x] CSS 3D transform belt, 12 cards, `preserve-3d` + one `--spin` var
+- [x] Depth via CSS `cos()` in a registered `@property`; **no blur** (D4).
+      Verified: front `facing:1 → opacity:1`, side `0.5 → 0.31`, back `0 → 0.08`
+- [x] `backface-visibility: hidden` — without it the far cards render mirrored
+- [x] Each card is a real `<a>`; no extra tab stop, arrows bubble from the focused card
+- [x] Drag with smoothed + clamped momentum, snaps to a card boundary
+- [x] Page-scroll rotation while in view, passive, never `preventDefault`
+- [x] `prefers-reduced-motion`: no momentum, no scroll-drive
+- [x] Plain episode list already shipped in Phase 1
 - [ ] Measure on real mid-range Android, not throttled desktop
+- [ ] Tighten the gap between the CTA and the belt on mobile (~85px of dead space)
 
 ## Phase 3 — live player
 - [ ] `<LivePlayer/>` in the root layout, outside the page slot
