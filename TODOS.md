@@ -42,13 +42,18 @@ gstack decision log (`gstack-decision-search`), not here.
 - [ ] Measure on real mid-range Android, not throttled desktop
 - [ ] Tighten the gap between the CTA and the belt on mobile (~85px of dead space)
 
-## Phase 3 — live player
-- [ ] `<LivePlayer/>` in the root layout, outside the page slot
-- [ ] Twitch Helix live status, edge route, schedule-aware TTL (20s in-window, 5min out)
-- [ ] `FORCE_LIVE` env override so a Twitch outage cannot blank the hero
-- [ ] Offline state: next-slot countdown computed locally from the Tue/Thu schedule
-- [ ] Muted autoplay, unmute on gesture, dismissal persisted in sessionStorage
-- [ ] **E2E: player survives Home → About** (load-bearing)
+## Phase 3 — live player — DONE, branch `phase-3-live-player`
+- [x] `<LivePlayer/>` in the root layout, outside the page slot
+- [x] Twitch Helix live status, edge route, schedule-aware TTL (20s in-window, 5min out)
+- [x] `FORCE_LIVE` env override so a Twitch outage cannot blank the hero
+- [x] Offline state: next-slot countdown computed locally, DST-correct, 10 unit tests
+- [x] Muted autoplay, unmute on gesture, dismissal persisted in sessionStorage
+- [x] **E2E: player survives Home → About** — stamps the DOM node and checks the
+      stamp survives, so a remount cannot pass. 4 specs, green twice in a row.
+- [ ] Add real `TWITCH_CLIENT_ID` / `TWITCH_CLIENT_SECRET` (route returns
+      `source: "offline"` until then, which is a correct state, not an error)
+- [ ] Mobile: the player is `hidden sm:block`. The brief wants it docked to a slim
+      bottom bar under 640px — not built yet.
 
 ## Phase 4 — About, meme wall
 - [ ] About: hosts (photos in `Assets/`), "as heard on", footer

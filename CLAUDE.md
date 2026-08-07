@@ -29,6 +29,11 @@ the wordmark is the header.
 
 `npm test` (Vitest, unit) and `npm run e2e` (Playwright). The load-bearing E2E is
 "live player survives Home → About" — it is what justifies the framework choice.
+First run on a machine needs `node node_modules/@playwright/test/cli.js install chromium`.
+
+**Never run `npm run build` while `npm run dev` is up.** They share `.next` and the
+build clobbers it, leaving a dev server that serves a near-empty stylesheet and
+404s its own chunks. Symptoms look like a CSS bug and are not one.
 
 ## Skill routing
 

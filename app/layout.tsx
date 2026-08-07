@@ -1,4 +1,5 @@
 import { Footer } from "@/components/Footer";
+import { LivePlayer } from "@/components/player/LivePlayer";
 import { POSITIONING, SCHEDULE } from "@/content/platforms";
 import type { Metadata } from "next";
 import { Archivo, Geist_Mono } from "next/font/google";
@@ -56,7 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </a>
         {children}
         <Footer />
-        {/* <LivePlayer /> — Phase 3 */}
+        <LivePlayer />
       </body>
     </html>
   );
