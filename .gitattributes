@@ -1,0 +1,20 @@
+# Normalise line endings.
+#
+# Without this, git on Windows checks files out as CRLF while Biome formats and
+# expects LF. The result is that `npm run lint` passes on a file you just wrote
+# and fails on the identical file after a `git checkout` — which is exactly how a
+# lint failure reached main without anyone doing anything wrong.
+#
+# `eol=lf` forces LF in the working tree as well as in the repo, so git, Biome
+# and CI all agree regardless of platform.
+* text=auto eol=lf
+
+# Binary assets must never be touched.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ico binary
