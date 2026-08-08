@@ -69,10 +69,28 @@ gstack decision log (`gstack-decision-search`), not here.
       left-6` per the brief. Either accept it (users can dismiss), move it bottom-right,
       or hide it on About.
 
-## Phase 5 — polish
-- [ ] A11y pass, perf pass against budget (LCP < 1.5s, JS < 90KB, CLS < 0.02)
-- [ ] OG images via `next/og`, JSON-LD `PodcastSeries` + `PodcastEpisode`
-- [ ] Analytics: platform-button clicks, CTA clicks, sphere interaction rate
+## Phase 5 — polish — DONE, branch `phase-5-polish`
+- [x] **A11y pass.** Audited both pages in-browser: heading order, landmarks, alt
+      text, accessible names, contrast on every rendered text style. 0 failures.
+- [x] **Contrast bug fixed.** `--mm-text-3` was `#55555E` at **2.67:1** and carried
+      real text (episode dates, footer copyright, the "As heard on" heading). Raised
+      to `#7C7C85`, the minimum that clears AA 4.5:1 on `--mm-base`. Figma variable
+      updated to match. On a near-black canvas there is only room for two legible
+      greys, so tertiary is now a small step below secondary, not a big one.
+- [x] JSON-LD: `PodcastSeries` + `PodcastEpisode` on Home, `AboutPage` on About.
+      `numberOfEpisodes` deliberately omitted — RSS returns 15, we do not know the
+      total, and a wrong count in structured data is worse than none.
+- [x] OG images via `next/og`, both routes, real Archivo Black fetched at build with
+      a graceful fallback to the default face if the font fetch fails.
+- [x] Analytics call sites wired: `platform_click`, `cta_watch_live`,
+      `orbit_interact` (once per visit), `episode_open`. **No provider** — that is a
+      privacy/product decision. `lib/analytics.ts` is the single function to change.
+- [ ] Pick an analytics provider (Plausible / Vercel / none).
+- [ ] **Budget: Home is 112 kB, target was 90 kB.** 103 kB is the Next.js floor.
+      Wiring analytics turned `PlatformBar` and `LiveCta` into client components,
+      costing ~2 kB. Recoverable: one delegated click listener in the layout reading
+      `data-analytics` attributes would put both back on the server.
+- [ ] Measure LCP/CLS on a real deploy — local numbers are not the budget.
 
 ## Phase 6 — newsletter (explicitly lowest priority)
 - [ ] Email in → added to the Substack list. Substack has no supported public API,

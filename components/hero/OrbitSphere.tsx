@@ -1,6 +1,7 @@
 "use client";
 
 import { OrbitCard } from "@/components/hero/OrbitCard";
+import { track } from "@/lib/analytics";
 import type { Episode } from "@/lib/episodes";
 import { ORBIT } from "@/lib/orbit";
 import { useCallback, useEffect, useRef } from "react";
@@ -53,6 +54,14 @@ export function OrbitSphere({ episodes }: { episodes: Episode[] }) {
   const lastX = useRef(0);
   const target = useRef<number | null>(null);
   const frame = useRef<number | null>(null);
+  // Fired once per visit. Whether anyone touches the sphere at all is the
+  // question; every individual drag frame is noise.
+  const reported = useRef(false);
+  const reportOnce = (how: "drag" | "keyboard") => {
+    if (reported.current) return;
+    reported.current = true;
+    track("orbit_interact", { how });
+  };
 
   const write = useCallback(() => {
     beltRef.current?.style.setProperty("--spin", `${spin.current}deg`);
@@ -119,6 +128,7 @@ export function OrbitSphere({ episodes }: { episodes: Episode[] }) {
   // still completes rather than sticking half-rotated.
   const onPointerDown = (e: React.PointerEvent) => {
     stop();
+    reportOnce("drag");
     dragging.current = true;
     velocity.current = 0;
     target.current = null;
@@ -155,6 +165,7 @@ export function OrbitSphere({ episodes }: { episodes: Episode[] }) {
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
     e.preventDefault();
+    reportOnce("keyboard");
     const base = target.current ?? spin.current;
     const snapped = Math.round(base / STEP) * STEP;
     goTo(snapped + (e.key === "ArrowLeft" ? STEP : -STEP));

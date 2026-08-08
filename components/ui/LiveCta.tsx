@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * The one primary CTA on the homepage. There is deliberately only ever one.
  *
@@ -7,6 +9,8 @@
  * "large text", where the requirement drops to 3:1. Do not shrink this label
  * without also switching the fill to --mm-accent-deep (#C40000, 5.7:1).
  */
+import { track } from "@/lib/analytics";
+
 export function LiveCta({
   href = "https://www.youtube.com/@MemesandMarketsPod/live",
   children = "Watch live now",
@@ -19,6 +23,7 @@ export function LiveCta({
       href={href}
       target="_blank"
       rel="noreferrer noopener"
+      onClick={() => track("cta_watch_live")}
       className="inline-flex items-center gap-3 rounded-[10px] px-8 py-4 uppercase transition-transform duration-150 hover:scale-[1.02] active:scale-100"
       style={{
         background: "var(--mm-accent)",

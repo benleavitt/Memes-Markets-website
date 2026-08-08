@@ -1,6 +1,7 @@
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
 import { HOST_LIST } from "@/content/hosts";
 import { HOSTS, PLATFORMS, POSITIONING, SCHEDULE } from "@/content/platforms";
+import { JsonLd, aboutSchema } from "@/lib/schema";
 import type { Metadata } from "next";
 import Image from "next/image";
 
@@ -22,6 +23,7 @@ export const metadata: Metadata = {
 export default function About() {
   return (
     <main id="main" className="mx-auto w-full max-w-[1200px] px-6 pt-24 pb-24">
+      <JsonLd data={aboutSchema()} />
       <section>
         <p className="type-mono-label" style={{ color: "var(--mm-accent)" }}>
           About

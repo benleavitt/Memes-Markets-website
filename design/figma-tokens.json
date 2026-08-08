@@ -2,9 +2,21 @@
   "_comment": "Dumped from Figma file qUhg8iR0L0TAOqv3QQ7pAM, collection 'M&M Tokens', mode 'Dark'. Regenerate with the Figma MCP, then run `npm run tokens` to emit styles/tokens.css. Do not hand-edit tokens.css.",
   "_generated": "2026-08-06",
   "colors": [
-    { "name": "color/accent-red", "css": "--mm-accent", "value": "#FF0000" },
-    { "name": "color/accent-bright", "css": "--mm-accent-bright", "value": "#FF0000" },
-    { "name": "color/accent-red-deep", "css": "--mm-accent-deep", "value": "#C40000" },
+    {
+      "name": "color/accent-red",
+      "css": "--mm-accent",
+      "value": "#FF0000"
+    },
+    {
+      "name": "color/accent-bright",
+      "css": "--mm-accent-bright",
+      "value": "#FF0000"
+    },
+    {
+      "name": "color/accent-red-deep",
+      "css": "--mm-accent-deep",
+      "value": "#C40000"
+    },
     {
       "name": "color/accent-glow",
       "css": "--mm-accent-glow",
@@ -15,20 +27,57 @@
       "css": "--mm-accent-rim",
       "value": "rgb(255 58 48 / 55%)"
     },
-    { "name": "color/base", "css": "--mm-base", "value": "#0B0B0D" },
-    { "name": "color/surface", "css": "--mm-surface", "value": "#141418" },
-    { "name": "color/surface-raised", "css": "--mm-surface-raised", "value": "#1C1C22" },
-    { "name": "color/surface-light", "css": "--mm-surface-light", "value": "#E9E9EC" },
+    {
+      "name": "color/base",
+      "css": "--mm-base",
+      "value": "#0B0B0D"
+    },
+    {
+      "name": "color/surface",
+      "css": "--mm-surface",
+      "value": "#141418"
+    },
+    {
+      "name": "color/surface-raised",
+      "css": "--mm-surface-raised",
+      "value": "#1C1C22"
+    },
+    {
+      "name": "color/surface-light",
+      "css": "--mm-surface-light",
+      "value": "#E9E9EC"
+    },
     {
       "name": "color/surface-inverse",
       "css": "--mm-surface-inverse",
       "value": "#FFFFFF"
     },
-    { "name": "color/text-primary", "css": "--mm-text", "value": "#FFFFFF" },
-    { "name": "color/text-secondary", "css": "--mm-text-2", "value": "#8A8A93" },
-    { "name": "color/text-tertiary", "css": "--mm-text-3", "value": "#55555E" },
-    { "name": "color/text-on-accent", "css": "--mm-text-on-accent", "value": "#FFFFFF" },
-    { "name": "color/text-on-light", "css": "--mm-text-on-light", "value": "#0B0B0D" },
+    {
+      "name": "color/text-primary",
+      "css": "--mm-text",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "color/text-secondary",
+      "css": "--mm-text-2",
+      "value": "#8A8A93"
+    },
+    {
+      "name": "color/text-tertiary",
+      "css": "--mm-text-3",
+      "value": "#7C7C85",
+      "note": "Minimum grey that clears WCAG AA 4.5:1 on --mm-base. #55555E was 2.67:1 and carried real text (dates, copyright, the As heard on heading). On a near-black canvas there is only room for two legible greys; the tertiary level is now a small step, not a big one."
+    },
+    {
+      "name": "color/text-on-accent",
+      "css": "--mm-text-on-accent",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "color/text-on-light",
+      "css": "--mm-text-on-light",
+      "value": "#0B0B0D"
+    },
     {
       "name": "color/border-subtle",
       "css": "--mm-border",
@@ -44,7 +93,11 @@
       "css": "--mm-grid-line",
       "value": "rgb(255 255 255 / 9%)"
     },
-    { "name": "color/scrim", "css": "--mm-scrim", "value": "rgb(11 11 13 / 72%)" },
+    {
+      "name": "color/scrim",
+      "css": "--mm-scrim",
+      "value": "rgb(11 11 13 / 72%)"
+    },
     {
       "name": "color/live-red",
       "css": "--mm-live",
@@ -53,36 +106,108 @@
     }
   ],
   "space": [
-    { "css": "--mm-space-1", "value": 4 },
-    { "css": "--mm-space-2", "value": 8 },
-    { "css": "--mm-space-3", "value": 12 },
-    { "css": "--mm-space-4", "value": 16 },
-    { "css": "--mm-space-5", "value": 24 },
-    { "css": "--mm-space-6", "value": 32 },
-    { "css": "--mm-space-7", "value": 48 },
-    { "css": "--mm-space-8", "value": 64 },
-    { "css": "--mm-space-9", "value": 96 },
-    { "css": "--mm-space-10", "value": 128 },
-    { "css": "--mm-space-11", "value": 160 }
+    {
+      "css": "--mm-space-1",
+      "value": 4
+    },
+    {
+      "css": "--mm-space-2",
+      "value": 8
+    },
+    {
+      "css": "--mm-space-3",
+      "value": 12
+    },
+    {
+      "css": "--mm-space-4",
+      "value": 16
+    },
+    {
+      "css": "--mm-space-5",
+      "value": 24
+    },
+    {
+      "css": "--mm-space-6",
+      "value": 32
+    },
+    {
+      "css": "--mm-space-7",
+      "value": 48
+    },
+    {
+      "css": "--mm-space-8",
+      "value": 64
+    },
+    {
+      "css": "--mm-space-9",
+      "value": 96
+    },
+    {
+      "css": "--mm-space-10",
+      "value": 128
+    },
+    {
+      "css": "--mm-space-11",
+      "value": 160
+    }
   ],
   "radius": [
-    { "css": "--mm-radius-sm", "value": 6 },
-    { "css": "--mm-radius-md", "value": 10 },
-    { "css": "--mm-radius-lg", "value": 16 },
-    { "css": "--mm-radius-xl", "value": 24 },
-    { "css": "--mm-radius-pill", "value": 999 }
+    {
+      "css": "--mm-radius-sm",
+      "value": 6
+    },
+    {
+      "css": "--mm-radius-md",
+      "value": 10
+    },
+    {
+      "css": "--mm-radius-lg",
+      "value": 16
+    },
+    {
+      "css": "--mm-radius-xl",
+      "value": 24
+    },
+    {
+      "css": "--mm-radius-pill",
+      "value": 999
+    }
   ],
   "size": [
-    { "css": "--mm-size-grid-cell", "value": 56 },
-    { "css": "--mm-size-icon", "value": 20 },
-    { "css": "--mm-size-icon-lg", "value": 28 },
-    { "css": "--mm-size-platform-btn", "value": 52 },
-    { "css": "--mm-size-player-w", "value": 340 },
-    { "css": "--mm-size-container", "value": 1200 }
+    {
+      "css": "--mm-size-grid-cell",
+      "value": 56
+    },
+    {
+      "css": "--mm-size-icon",
+      "value": 20
+    },
+    {
+      "css": "--mm-size-icon-lg",
+      "value": 28
+    },
+    {
+      "css": "--mm-size-platform-btn",
+      "value": 52
+    },
+    {
+      "css": "--mm-size-player-w",
+      "value": 340
+    },
+    {
+      "css": "--mm-size-container",
+      "value": 1200
+    }
   ],
   "fonts": [
-    { "css": "--mm-font-display", "value": "Archivo" },
-    { "css": "--mm-font-mono", "value": "Geist Mono" }
+    {
+      "css": "--mm-font-display",
+      "value": "Archivo"
+    },
+    {
+      "css": "--mm-font-mono",
+      "value": "Geist Mono"
+    }
   ],
   "textStyles": [
     {

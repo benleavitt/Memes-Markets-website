@@ -4,6 +4,7 @@ import { Wordmark } from "@/components/hero/Wordmark";
 import { LiveCta } from "@/components/ui/LiveCta";
 import { POSITIONING, SCHEDULE } from "@/content/platforms";
 import { getEpisodes } from "@/lib/episodes";
+import { JsonLd, podcastSeriesSchema } from "@/lib/schema";
 
 /**
  * Home. No nav bar — the wordmark is the header (tbpn.com model).
@@ -21,6 +22,7 @@ export default async function Home() {
 
   return (
     <main id="main">
+      <JsonLd data={podcastSeriesSchema(episodes)} />
       <section className="flex flex-col items-center pt-16 pb-24">
         <Wordmark />
 

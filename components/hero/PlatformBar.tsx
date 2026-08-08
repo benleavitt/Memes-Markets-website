@@ -1,5 +1,8 @@
+"use client";
+
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
 import { PLATFORMS } from "@/content/platforms";
+import { track } from "@/lib/analytics";
 
 /**
  * "Find M&M" — one pill holding every platform the show is on.
@@ -43,6 +46,7 @@ export function PlatformBar() {
               target="_blank"
               rel="noreferrer noopener"
               aria-label={`${p.label} — ${p.handle}`}
+              onClick={() => track("platform_click", { platform: p.id, surface: "hero" })}
               className="group relative grid size-10 place-items-center rounded-[10px] border transition-colors duration-150 hover:border-[var(--mm-accent)] hover:text-[var(--mm-text)] sm:size-[52px]"
               style={{
                 background: "var(--mm-surface-raised)",
