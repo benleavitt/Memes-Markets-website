@@ -213,6 +213,9 @@ export function OrbitSphere({ episodes }: { episodes: Episode[] }) {
 
   return (
     <div className="mm-orbit-stage">
+      {/* The body the cards go round. Purely decorative — the episodes carry all
+          the meaning, and this is the thing they orbit. */}
+      <div className="mm-globe" aria-hidden="true" />
       {/* The belt is not itself focusable. The cards are links, so they are already
           in the tab order; adding a tabIndex on the container would just create a
           second stop that lands on nothing. Arrow keys bubble up from whichever

@@ -143,15 +143,21 @@
 }
 
 :root {
-  --mm-orbit-r: 430px;
+  --mm-orbit-r: 345px;
   --mm-orbit-scale: 1;
+  /* The globe's radius. Smaller than the orbit radius so the cards ride OUTSIDE
+     the sphere surface rather than clipping through it. */
+  --mm-globe-r: 300px;
+  /* Shared centre for the globe and the belt. Both must agree or the cards stop
+     looking like they are going round anything. */
+  --mm-globe-y: 300px;
 }
 
 .mm-orbit-stage {
   position: relative;
   width: 100%;
-  height: 540px;
-  perspective: 1500px;
+  height: 620px;
+  perspective: 2200px;
   /* Cards swing wider than the viewport at the sides. Without this the page
      gains a horizontal scrollbar on every device. */
   overflow: hidden;
@@ -161,7 +167,9 @@
   position: absolute;
   inset: 0;
   transform-style: preserve-3d;
-  transform: scale(var(--mm-orbit-scale)) rotateX(-9deg)
+  /* Rotate about the globe's centre, not the stage's, or the ring drifts off it. */
+  transform-origin: 50% var(--mm-globe-y);
+  transform: scale(var(--mm-orbit-scale)) rotateX(-12deg)
     rotateY(calc(var(--spin) + var(--nudge)));
   animation: mm-orbit-drift 72s linear infinite;
   /* Vertical gestures still scroll the page; only horizontal drag turns the belt. */
@@ -182,7 +190,7 @@
 .mm-orbit-slot {
   position: absolute;
   left: 50%;
-  top: 50%;
+  top: var(--mm-globe-y);
   width: 210px;
   margin-left: -105px;
   margin-top: -96px;
@@ -202,10 +210,75 @@
 @media (max-width: 767px) {
   :root {
     --mm-orbit-scale: 0.62;
+    --mm-globe-r: 178px;
+    --mm-globe-y: 190px;
+    --mm-orbit-r: 345px;
   }
   .mm-orbit-stage {
-    height: 360px;
+    height: 400px;
   }
+}
+
+/* The globe itself.
+ *
+ * No filter: blur() — the rim is gradient stops. The earlier no-blur rule was
+ * about per-frame repaints, and this element never animates, but gradients are
+ * cheaper and sharper here anyway.
+ *
+ * Layer order in the stage:
+ *   globe  ->  belt (far half hidden by backface-visibility)  ->  logo
+ * so cards sweep across the globe's face and the mark stays legible on top.
+ */
+.mm-globe {
+  position: absolute;
+  left: 50%;
+  top: var(--mm-globe-y);
+  width: calc(var(--mm-globe-r) * 2);
+  height: calc(var(--mm-globe-r) * 2);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+      to bottom,
+      rgb(255 255 255 / 4%) 0 1px,
+      transparent 1px 24px
+    ),
+    radial-gradient(circle at 50% 26%, #2a2129 0%, #1a141c 34%, #100c12 62%, #08070a 100%);
+  /* lit from above */
+  box-shadow: inset 0 26px 50px -24px rgb(255 90 80 / 45%),
+    /* and falling into shadow at the bottom */
+    inset 0 -70px 90px -50px rgb(0 0 0 / 95%), 0 0 160px rgb(255 0 0 / 28%);
+}
+/* The atmosphere. Masked to the upper half so it hugs the top silhouette the way
+   a lit sphere does, instead of ringing the whole circle evenly. */
+.mm-globe::before {
+  content: "";
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    transparent 0%,
+    transparent 69%,
+    rgb(255 60 45 / 70%) 72%,
+    rgb(255 150 140 / 100%) 75.5%,
+    rgb(255 50 35 / 60%) 79%,
+    transparent 90%
+  );
+  mask-image: linear-gradient(to bottom, #000 0%, #000 34%, transparent 72%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 34%, transparent 72%);
+}
+/* Specular sheen on the upper face. */
+.mm-globe::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse 55% 35% at 50% 16%,
+    rgb(255 255 255 / 7%) 0%,
+    transparent 100%
+  );
 }
 
 /* The M&M mark crowning the globe.
@@ -217,40 +290,38 @@
  * legibility. It now sits above the card band and paints on top. */
 .mm-orbit-core {
   position: absolute;
-  inset: 0;
+  left: 50%;
+  /* On the globe's upper cap, clear of the card band. The near cards ride about
+     72px below the globe centre once perspective is applied, so anything lower
+     than this gets a thumbnail through the middle of the mark. */
+  top: calc(var(--mm-globe-y) - 148px);
+  transform: translate(-50%, -50%);
   display: grid;
-  justify-items: center;
-  align-content: start;
-  padding-top: 18px;
+  place-items: center;
   pointer-events: none;
-  z-index: 1;
+  z-index: 2;
 }
 .mm-orbit-core::before {
   content: "";
   grid-area: 1 / 1;
-  align-self: center;
-  justify-self: center;
-  width: 360px;
-  height: 360px;
-  margin-top: 40px;
+  width: 280px;
+  height: 280px;
   border-radius: 999px;
   background: radial-gradient(
     circle,
-    rgb(255 0 0 / 20%) 0%,
-    rgb(255 0 0 / 6%) 45%,
+    rgb(255 0 0 / 22%) 0%,
+    rgb(255 0 0 / 8%) 45%,
     transparent 70%
   );
 }
 .mm-orbit-core img {
   grid-area: 1 / 1;
-  height: 150px;
+  height: 158px;
   width: auto;
+  filter: drop-shadow(0 6px 18px rgb(0 0 0 / 70%));
 }
 
 @media (max-width: 767px) {
-  .mm-orbit-core {
-    padding-top: 6px;
-  }
   .mm-orbit-core img {
     height: 84px;
   }
