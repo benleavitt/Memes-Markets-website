@@ -68,8 +68,7 @@ export function JsonLd({ data }: { data: object }) {
   return (
     <script
       type="application/ld+json"
-      // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD has to be a
-      // raw script body, and this payload is built from our own typed data.
+      // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD must reach the DOM as a raw script body; the payload is our own typed data, and < is escaped below.
       dangerouslySetInnerHTML={{
         __html: JSON.stringify(data).replace(/</g, "\\u003c"),
       }}

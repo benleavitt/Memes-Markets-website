@@ -63,8 +63,10 @@ export function OrbitSphere({ episodes }: { episodes: Episode[] }) {
     track("orbit_interact", { how });
   };
 
+  // Writes --nudge, never --spin. --spin is animated by CSS (the continuous
+  // drift); --nudge is the user's offset on top of it. The belt adds them.
   const write = useCallback(() => {
-    beltRef.current?.style.setProperty("--spin", `${spin.current}deg`);
+    beltRef.current?.style.setProperty("--nudge", `${spin.current}deg`);
   }, []);
 
   const stop = useCallback(() => {
@@ -129,6 +131,7 @@ export function OrbitSphere({ episodes }: { episodes: Episode[] }) {
   const onPointerDown = (e: React.PointerEvent) => {
     stop();
     reportOnce("drag");
+    beltRef.current?.setAttribute("data-dragging", "true");
     dragging.current = true;
     velocity.current = 0;
     target.current = null;
@@ -155,6 +158,7 @@ export function OrbitSphere({ episodes }: { episodes: Episode[] }) {
   const onPointerUp = () => {
     if (!dragging.current) return;
     dragging.current = false;
+    beltRef.current?.removeAttribute("data-dragging");
     if (reduced()) {
       goTo(Math.round(spin.current / STEP) * STEP);
       return;
@@ -235,6 +239,11 @@ export function OrbitSphere({ episodes }: { episodes: Episode[] }) {
           </li>
         ))}
       </ul>
+      <div className="mm-orbit-core" aria-hidden="true">
+        {/* Decorative: the wordmark above already names the show, so announcing
+            the mark again would just repeat it. */}
+        <img src="/brand/mm-logo.png" alt="" width={522} height={640} />
+      </div>
     </div>
   );
 }

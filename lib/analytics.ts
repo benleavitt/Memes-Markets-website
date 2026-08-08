@@ -32,7 +32,7 @@ export function track(event: AnalyticsEvent, props?: Props): void {
   if (typeof window === "undefined") return;
 
   if (process.env.NODE_ENV === "development") {
-    // biome-ignore lint/suspicious/noConsole: the point of the dev branch is to be visible.
+    // Visible on purpose: the point of this branch is to prove events fire.
     console.debug("[analytics]", event, props ?? {});
     return;
   }

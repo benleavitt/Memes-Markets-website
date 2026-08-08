@@ -121,6 +121,26 @@
   inherits: false;
   initial-value: 1;
 }
+/* User input. Kept separate from --spin so the drift animation and a drag can
+   both act on the belt without one clobbering the other: --spin is owned by CSS,
+   --nudge is owned by JS, and the belt reads the sum. */
+@property --nudge {
+  syntax: "<angle>";
+  inherits: true;
+  initial-value: 0deg;
+}
+
+/* Registered properties are animatable, so the whole belt drifts with no JS at
+   all — one interpolated angle, and the twelve depth opacities fall out of it
+   through the same cos() they already use. */
+@keyframes mm-orbit-drift {
+  from {
+    --spin: 0deg;
+  }
+  to {
+    --spin: 360deg;
+  }
+}
 
 :root {
   --mm-orbit-r: 430px;
@@ -141,13 +161,22 @@
   position: absolute;
   inset: 0;
   transform-style: preserve-3d;
-  transform: scale(var(--mm-orbit-scale)) rotateX(-9deg) rotateY(var(--spin));
+  transform: scale(var(--mm-orbit-scale)) rotateX(-9deg)
+    rotateY(calc(var(--spin) + var(--nudge)));
+  animation: mm-orbit-drift 72s linear infinite;
   /* Vertical gestures still scroll the page; only horizontal drag turns the belt. */
   touch-action: pan-y;
   cursor: grab;
 }
 .mm-orbit-belt:active {
   cursor: grabbing;
+}
+/* Pause only when a card is actually hovered, not anywhere over the stage — the
+   belt spans the full hero, so pausing on stage hover would stop it the moment
+   the pointer entered the section. */
+.mm-orbit-belt:has(.mm-orbit-slot:hover),
+.mm-orbit-belt[data-dragging="true"] {
+  animation-play-state: paused;
 }
 
 .mm-orbit-slot {
@@ -164,7 +193,7 @@
      the backface draws only the front arc, which is what a real carousel does. */
   backface-visibility: hidden;
   /* 1 when square-on to the viewer, 0 when directly behind the sphere */
-  --facing: calc((cos(var(--spin) + var(--a)) + 1) / 2);
+  --facing: calc((cos(var(--spin) + var(--nudge) + var(--a)) + 1) / 2);
   opacity: calc(0.08 + 0.92 * var(--facing) * var(--facing));
 }
 
@@ -179,8 +208,62 @@
   }
 }
 
+/* The M&M mark crowning the globe.
+ *
+ * First attempt put it at the dead centre and BEHIND the belt, which is where a
+ * real object would sit. It looked broken: the belt is viewed almost edge-on, so
+ * the cards run straight through the middle and swallowed the mark, leaving just
+ * the arrow tip poking out like a stray graphic. Depth correctness lost to
+ * legibility. It now sits above the card band and paints on top. */
+.mm-orbit-core {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  padding-top: 18px;
+  pointer-events: none;
+  z-index: 1;
+}
+.mm-orbit-core::before {
+  content: "";
+  grid-area: 1 / 1;
+  align-self: center;
+  justify-self: center;
+  width: 360px;
+  height: 360px;
+  margin-top: 40px;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle,
+    rgb(255 0 0 / 20%) 0%,
+    rgb(255 0 0 / 6%) 45%,
+    transparent 70%
+  );
+}
+.mm-orbit-core img {
+  grid-area: 1 / 1;
+  height: 150px;
+  width: auto;
+}
+
+@media (max-width: 767px) {
+  .mm-orbit-core {
+    padding-top: 6px;
+  }
+  .mm-orbit-core img {
+    height: 84px;
+  }
+  .mm-orbit-core::before {
+    width: 210px;
+    height: 210px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mm-orbit-belt {
     transition: none;
+    /* No drift at all. Drag and the arrow keys still work. */
+    animation: none;
   }
 }
