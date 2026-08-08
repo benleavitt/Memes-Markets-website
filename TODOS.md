@@ -55,9 +55,19 @@ gstack decision log (`gstack-decision-search`), not here.
 - [ ] Mobile: the player is `hidden sm:block`. The brief wants it docked to a slim
       bottom bar under 640px — not built yet.
 
-## Phase 4 — About
-- [ ] About: hosts (photos in `Assets/`), "as heard on", footer
-- [ ] Trace the M logo to SVG and work it into header + footer
+## Phase 4 — About — DONE, branch `phase-4-about`
+- [x] About: hero, "Hosted by" cards with the real photos, "as heard on" row
+- [x] Host photos wired through `next/image`; first one gets `priority` (it is the LCP)
+- [x] Footer + disclaimer inherited from the root layout, so this page cannot lose it
+- [ ] **Per-host social handles.** `content/hosts.ts` renders a links row when handles
+      exist. Left empty deliberately: the brief only supplied show-level accounts and
+      inventing personal ones would put fake links on a real person's bio.
+- [ ] **Logo SVG — needs the source file, not a trace.** `public/brand/mm-logo.png` is
+      a cropped raster and looks fine at 44px. Hand-tracing it from pixels would be an
+      approximation of someone's brand mark. Ask for the original vector.
+- [ ] The floating player overlaps the left host card at 1440. It is `fixed bottom-6
+      left-6` per the brief. Either accept it (users can dismiss), move it bottom-right,
+      or hide it on About.
 
 ## Phase 5 — polish
 - [ ] A11y pass, perf pass against budget (LCP < 1.5s, JS < 90KB, CLS < 0.02)

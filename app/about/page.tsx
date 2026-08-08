@@ -1,5 +1,8 @@
-import { HOSTS, POSITIONING, SCHEDULE } from "@/content/platforms";
+import { PlatformIcon } from "@/components/ui/PlatformIcon";
+import { HOST_LIST } from "@/content/hosts";
+import { HOSTS, PLATFORMS, POSITIONING, SCHEDULE } from "@/content/platforms";
 import type { Metadata } from "next";
+import Image from "next/image";
 
 export const metadata: Metadata = {
   title: "About",
@@ -7,21 +10,125 @@ export const metadata: Metadata = {
 };
 
 /**
- * Stub. Phase 4 builds this out — studio hero, host cards with per-host social
- * rows, "as heard on", newsletter capture.
+ * About.
  *
- * It exists now rather than in Phase 4 because the footer links here from every
- * page, and shipping Phase 1 with a link to a 404 is worse than shipping a thin
- * page. It also gives Phase 3's load-bearing E2E ("player survives Home → About")
- * a second route to navigate to.
+ *   hero        who the show is, in one line
+ *   hosted by   two cards, real photos
+ *   as heard on the distribution row, deliberately low contrast
+ *
+ * The footer comes from the root layout, so the legal disclaimer is on this page
+ * without this file having to remember it.
  */
 export default function About() {
   return (
     <main id="main" className="mx-auto w-full max-w-[1200px] px-6 pt-24 pb-24">
-      <h1 className="type-display-lg text-balance">About the show</h1>
-      <p className="type-body-lg mt-6 max-w-[62ch]" style={{ color: "var(--mm-text-2)" }}>
-        {POSITIONING}. {SCHEDULE}, hosted by {HOSTS}.
-      </p>
+      <section>
+        <p className="type-mono-label" style={{ color: "var(--mm-accent)" }}>
+          About
+        </p>
+        <h1 className="type-display-lg mt-4 max-w-[18ch] text-balance">
+          Web3&rsquo;s live podcast
+        </h1>
+        <p
+          className="type-body-lg mt-6 max-w-[62ch]"
+          style={{ color: "var(--mm-text-2)" }}
+        >
+          {POSITIONING}. {SCHEDULE}, live and unedited, hosted by {HOSTS}. Ninety-odd
+          episodes in and still arguing about the same three things.
+        </p>
+      </section>
+
+      <section aria-labelledby="hosts-heading" className="mt-24">
+        <h2
+          id="hosts-heading"
+          className="type-mono-label"
+          style={{ color: "var(--mm-accent)" }}
+        >
+          Hosted by
+        </h2>
+        <ul className="mt-8 grid gap-6 md:grid-cols-2">
+          {HOST_LIST.map((host, i) => (
+            <li
+              key={host.name}
+              className="overflow-hidden rounded-[24px] border p-2"
+              style={{ background: "var(--mm-surface)", borderColor: "var(--mm-border)" }}
+            >
+              {/* Concentric radii again: 24 outer minus 8 padding = 16 inner. */}
+              <div
+                className="relative overflow-hidden rounded-[16px]"
+                style={{ aspectRatio: "4 / 3", background: "var(--mm-surface-raised)" }}
+              >
+                <Image
+                  src={host.photo}
+                  alt={`${host.name}, ${host.role.toLowerCase()} of Memes & Markets`}
+                  fill
+                  sizes="(min-width: 768px) 580px, 100vw"
+                  // The first host photo is the LCP element on this page. Without
+                  // priority Next lazy-loads it and the largest paint waits on a
+                  // request it could have started in the document head.
+                  priority={i === 0}
+                  className="object-cover object-top"
+                />
+              </div>
+              <div className="px-3 pt-5 pb-3">
+                <h3 className="type-heading-lg">{host.name}</h3>
+                <p
+                  className="type-mono-ticker-sm mt-1 uppercase"
+                  style={{ color: "var(--mm-accent)" }}
+                >
+                  {host.role}
+                </p>
+                <p className="type-body-md mt-4" style={{ color: "var(--mm-text-2)" }}>
+                  {host.bio}
+                </p>
+                {host.links && host.links.length > 0 && (
+                  <ul className="mt-5 flex flex-wrap gap-4">
+                    {host.links.map((l) => (
+                      <li key={l.href}>
+                        <a
+                          className="type-label-lg uppercase hover:underline"
+                          href={l.href}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                        >
+                          {l.label}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section aria-labelledby="heard-heading" className="mt-24">
+        <h2
+          id="heard-heading"
+          className="type-mono-label"
+          style={{ color: "var(--mm-text-3)" }}
+        >
+          As heard on
+        </h2>
+        <ul className="mt-6 flex flex-wrap items-center gap-x-10 gap-y-5">
+          {PLATFORMS.map((p) => (
+            <li key={p.id}>
+              <a
+                href={p.href}
+                target="_blank"
+                rel="noreferrer noopener"
+                aria-label={`${p.label} — ${p.handle}`}
+                className="flex items-center gap-2.5 opacity-55 transition-opacity duration-150 hover:opacity-100"
+                style={{ color: "var(--mm-text-2)" }}
+              >
+                <PlatformIcon id={p.id} size={20} />
+                <span className="type-heading-sm">{p.label}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
     </main>
   );
 }
