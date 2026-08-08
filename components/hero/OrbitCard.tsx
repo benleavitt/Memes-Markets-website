@@ -1,6 +1,5 @@
 "use client";
 
-import { track } from "@/lib/analytics";
 import type { Episode } from "@/lib/episodes";
 import Image from "next/image";
 import { useState } from "react";
@@ -31,7 +30,9 @@ export function OrbitCard({
       href={episode.url}
       target="_blank"
       rel="noreferrer noopener"
-      onClick={() => track("episode_open", { id: episode.id, surface: "orbit" })}
+      data-analytics="episode_open"
+      data-analytics-id={episode.id}
+      data-analytics-surface="orbit"
       className="mm-orbit-card group block w-[210px] rounded-[24px] border p-2 no-underline"
       style={{
         background: "var(--mm-surface)",

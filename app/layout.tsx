@@ -1,3 +1,4 @@
+import { AnalyticsDelegate } from "@/components/AnalyticsDelegate";
 import { Footer } from "@/components/Footer";
 import { LivePlayer } from "@/components/player/LivePlayer";
 import { POSITIONING, SCHEDULE } from "@/content/platforms";
@@ -58,6 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         <Footer />
         <LivePlayer />
+        <AnalyticsDelegate />
       </body>
     </html>
   );
