@@ -2,6 +2,7 @@ import { AnalyticsDelegate } from "@/components/AnalyticsDelegate";
 import { Footer } from "@/components/Footer";
 import { LivePlayer } from "@/components/player/LivePlayer";
 import { POSITIONING, SCHEDULE } from "@/content/platforms";
+import { siteUrl } from "@/lib/site";
 import type { Metadata } from "next";
 import { Archivo, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -23,7 +24,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://memesandmarkets.com"),
+  metadataBase: new URL(siteUrl()),
   title: {
     default: "Memes & Markets — Web3's live podcast",
     template: "%s — Memes & Markets",

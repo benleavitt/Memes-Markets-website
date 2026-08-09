@@ -1,3 +1,4 @@
+import { NewsletterForm } from "@/components/ui/NewsletterForm";
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
 import { DISCLAIMER, HIGHLIGHTS, HOSTS, PLATFORMS, SCHEDULE } from "@/content/platforms";
 import Image from "next/image";
@@ -78,6 +79,32 @@ export function Footer() {
             ))}
           </ul>
         </div>
+
+        <hr style={{ borderColor: "var(--mm-border)" }} />
+
+        {/* The signup lives here as well as in the More info panel, and this is
+            the copy that carries the weight: it is on every page, it is reachable
+            without opening anything, and it is the only one that works with
+            JavaScript off. */}
+        <section
+          aria-labelledby="footer-newsletter"
+          className="grid gap-5 md:grid-cols-2 md:items-start md:gap-10"
+        >
+          <div>
+            <h2
+              id="footer-newsletter"
+              className="type-mono-label"
+              style={{ color: "var(--mm-accent)" }}
+            >
+              Get the newsletter
+            </h2>
+            <p className="type-body-md mt-3" style={{ color: "var(--mm-text-2)" }}>
+              What actually moved, twice a week, in the time it takes to finish a coffee.
+              Straight from our Substack.
+            </p>
+          </div>
+          <NewsletterForm />
+        </section>
 
         <hr style={{ borderColor: "var(--mm-border)" }} />
 

@@ -1,0 +1,62 @@
+# Keeps the committed episode fallback current, and watches the YouTube feed.
+#
+# The commit is the small half of this. The valuable half is that a red run means
+# the site's own parser can no longer read the feed — a failure lib/episodes.ts
+# deliberately swallows, so nothing else anywhere would ever tell you. GitHub
+# emails the repo owner when a scheduled workflow fails; that email IS the alarm.
+#
+# Twice daily rather than hourly: the live site is on ISR and re-pulls the feed
+# every hour by itself, so this file is not what keeps the orbit fresh. It only
+# needs to catch the feed breaking, and to stop the cold-start fallback rotting.
+name: Refresh episodes
+
+on:
+  schedule:
+    # 06:10 and 18:10 UTC. Offset from the hour because GitHub's scheduler queues
+    # heavily on the hour and jobs get delayed.
+    - cron: "10 6,18 * * *"
+  workflow_dispatch:
+
+# Least privilege: the job's only side effect is committing one data file.
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-episodes
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Needs >= 22.6 for native TypeScript stripping: the script imports
+          # lib/feed.ts directly so it exercises the same parser the site uses.
+          node-version: "22"
+          cache: npm
+
+      # fast-xml-parser is the only thing the script needs, but the lockfile is
+      # the honest way to install it.
+      - run: npm ci
+
+      - name: Fetch feed and refresh fallback
+        id: refresh
+        run: node scripts/refresh-episodes.mjs
+
+      # Runs the site's unit tests against the newly written data, so a feed that
+      # parses but produces nonsense cannot be committed unnoticed.
+      - name: Test
+        if: steps.refresh.outputs.changed == 'true'
+        run: npm test
+
+      - name: Commit
+        if: steps.refresh.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add content/episodes-fallback.json
+          git commit -m "chore: refresh episode fallback from the feed"
+          git push

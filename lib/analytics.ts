@@ -19,7 +19,9 @@
 export type AnalyticsEvent =
   /** Which of the seven platforms actually wins. The main thing worth knowing. */
   | "platform_click"
-  /** The single primary CTA. */
+  /** The single primary CTA, which opens the info panel. */
+  | "cta_more_info"
+  /** The live link inside that panel. */
   | "cta_watch_live"
   /** Did anyone touch the sphere, and how — drag, keyboard, or scroll. */
   | "orbit_interact"

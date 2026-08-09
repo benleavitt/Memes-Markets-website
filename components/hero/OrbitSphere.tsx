@@ -1,5 +1,6 @@
 "use client";
 
+import { Globe } from "@/components/hero/Globe";
 import { OrbitCard } from "@/components/hero/OrbitCard";
 import { track } from "@/lib/analytics";
 import type { Episode } from "@/lib/episodes";
@@ -20,6 +21,19 @@ const SNAP_EASE = 0.16;
  * launches the belt through several complete turns.
  */
 const MAX_VELOCITY = 8;
+/**
+ * Pointer travel, in px, before a press counts as a drag rather than a click.
+ *
+ * This threshold is what makes the cards clickable at all. Capturing the pointer
+ * on pointerdown — which is what this used to do — retargets both pointerdown and
+ * pointerup to the belt, so the browser computes their common ancestor as the
+ * belt and fires `click` there. The <a> underneath never activates: the cards
+ * looked like links, had the right href, hit-tested correctly, and did nothing.
+ *
+ * So capture is deferred until the pointer has actually moved this far. Below it
+ * the press is left completely alone and the anchor behaves like any other link.
+ */
+const DRAG_THRESHOLD = 5;
 
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
 
@@ -50,8 +64,14 @@ export function OrbitSphere({ episodes }: { episodes: Episode[] }) {
   const beltRef = useRef<HTMLUListElement>(null);
   const spin = useRef(0);
   const velocity = useRef(0);
+  /** Pointer is down. Not yet a drag — see DRAG_THRESHOLD. */
+  const pressing = useRef(false);
   const dragging = useRef(false);
   const lastX = useRef(0);
+  const startX = useRef(0);
+  const startY = useRef(0);
+  /** Set when a drag ends, so the click it generates does not open a card. */
+  const swallowClick = useRef(false);
   const target = useRef<number | null>(null);
   const frame = useRef<number | null>(null);
   // Fired once per visit. Whether anyone touches the sphere at all is the
@@ -126,21 +146,37 @@ export function OrbitSphere({ episodes }: { episodes: Episode[] }) {
     [reduced, run, stop, write],
   );
 
-  // Pointer drag. Capture on the belt so a fast flick that leaves the element
-  // still completes rather than sticking half-rotated.
+  // Pointer drag, in two stages: a press arms it, and only real movement promotes
+  // it to a drag. See DRAG_THRESHOLD — doing the promotion on pointerdown is what
+  // stopped the cards being clickable.
   const onPointerDown = (e: React.PointerEvent) => {
     stop();
-    reportOnce("drag");
-    beltRef.current?.setAttribute("data-dragging", "true");
-    dragging.current = true;
+    pressing.current = true;
+    dragging.current = false;
     velocity.current = 0;
     target.current = null;
     lastX.current = e.clientX;
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    startX.current = e.clientX;
+    startY.current = e.clientY;
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
-    if (!dragging.current) return;
+    if (!pressing.current) return;
+
+    if (!dragging.current) {
+      const travelled = Math.hypot(
+        e.clientX - startX.current,
+        e.clientY - startY.current,
+      );
+      if (travelled < DRAG_THRESHOLD) return;
+      // Now it is a drag. Capture from here so a fast flick that leaves the
+      // element still completes rather than sticking half-rotated.
+      dragging.current = true;
+      reportOnce("drag");
+      beltRef.current?.setAttribute("data-dragging", "true");
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    }
+
     const dx = e.clientX - lastX.current;
     lastX.current = e.clientX;
     const step = dx * DRAG_SENSITIVITY;
@@ -156,14 +192,28 @@ export function OrbitSphere({ episodes }: { episodes: Episode[] }) {
   };
 
   const onPointerUp = () => {
-    if (!dragging.current) return;
+    if (!pressing.current) return;
+    pressing.current = false;
+    if (!dragging.current) return; // a plain click: leave it entirely alone
+
     dragging.current = false;
+    // Releasing a flick over a card must not also open that card, so the click
+    // that follows this pointerup gets swallowed once.
+    swallowClick.current = true;
     beltRef.current?.removeAttribute("data-dragging");
     if (reduced()) {
       goTo(Math.round(spin.current / STEP) * STEP);
       return;
     }
     run();
+  };
+
+  // Capture phase, so it runs before the anchor's own default action.
+  const onClickCapture = (e: React.MouseEvent) => {
+    if (!swallowClick.current) return;
+    swallowClick.current = false;
+    e.preventDefault();
+    e.stopPropagation();
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -213,9 +263,7 @@ export function OrbitSphere({ episodes }: { episodes: Episode[] }) {
 
   return (
     <div className="mm-orbit-stage">
-      {/* The body the cards go round. Purely decorative — the episodes carry all
-          the meaning, and this is the thing they orbit. */}
-      <div className="mm-globe" aria-hidden="true" />
+      <Globe />
       {/* The belt is not itself focusable. The cards are links, so they are already
           in the tab order; adding a tabIndex on the container would just create a
           second stop that lands on nothing. Arrow keys bubble up from whichever
@@ -227,6 +275,7 @@ export function OrbitSphere({ episodes }: { episodes: Episode[] }) {
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
+        onClickCapture={onClickCapture}
         onKeyDown={onKeyDown}
       >
         {episodes.map((episode, i) => (

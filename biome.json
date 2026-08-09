@@ -1,7 +1,14 @@
 {
   "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
   "files": {
-    "ignore": ["node_modules", ".next", "styles/tokens.css", "playwright-report"]
+    "ignore": [
+      "node_modules",
+      ".next",
+      "styles/tokens.css",
+      "components/hero/globe-paths.ts",
+      "playwright-report",
+      "test-results"
+    ]
   },
   "formatter": {
     "enabled": true,

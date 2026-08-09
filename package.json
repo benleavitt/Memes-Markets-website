@@ -13,13 +13,16 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "globe": "node scripts/generate-globe.mjs",
+    "episodes:refresh": "node scripts/refresh-episodes.mjs",
+    "episodes:check": "node scripts/refresh-episodes.mjs --check"
   },
   "dependencies": {
+    "fast-xml-parser": "^4.5.0",
     "next": "^15.1.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "fast-xml-parser": "^4.5.0"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
@@ -28,8 +31,11 @@
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "d3-geo": "^3.1.1",
     "tailwindcss": "^4.0.0",
+    "topojson-client": "^3.1.0",
     "typescript": "^5.7.0",
-    "vitest": "^2.1.0"
+    "vitest": "^2.1.0",
+    "world-atlas": "^2.0.2"
   }
 }

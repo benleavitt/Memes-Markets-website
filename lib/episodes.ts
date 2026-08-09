@@ -1,5 +1,5 @@
-import { XMLParser } from "fast-xml-parser";
 import fallback from "../content/episodes-fallback.json";
+import { FEED, FEED_UA, parseFeed, toEpisode } from "./feed";
 
 /**
  * Episode data from the channel's public RSS feed. No API key, no quota, no
@@ -11,67 +11,45 @@ import fallback from "../content/episodes-fallback.json";
  *
  * The fallback is committed, not a nicety: without it, a first deploy against a
  * broken feed renders an empty hero. ISR only protects you after one good build.
+ *
+ * It is kept current by scripts/refresh-episodes.mjs on a schedule — see the
+ * pipeline note below. A fallback nobody refreshes is a fallback that quietly
+ * gets worse every week, and it is only ever read on the day it matters most.
+ *
+ * FRESHNESS. Two mechanisms, and it is worth knowing which does what:
+ *
+ *   ISR (below)          the live site re-pulls the feed at most hourly, with no
+ *                        rebuild. This is what keeps the orbit current.
+ *   refresh-episodes     a scheduled job re-commits the fallback and fails loudly
+ *                        if the feed stops parsing. This is what stops a YouTube
+ *                        format change from silently freezing the orbit forever.
+ *
+ * Neither is push-based. If the orbit ever needs to update within seconds of an
+ * upload rather than within the hour, the route is YouTube's WebSub hub
+ * (pubsubhubbub.appspot.com) posting to a handler that calls revalidatePath("/").
+ * That needs a public URL and a resubscribe cron, so it is deliberately not built
+ * while the site is local-only.
  */
 
-export const CHANNEL_ID = "UCpDHJbeyWBab2qr6y2d6_yQ";
-const FEED = `https://www.youtube.com/feeds/videos.xml?channel_id=${CHANNEL_ID}`;
+export type { Episode } from "./feed";
+export { CHANNEL_ID, parseFeed, thumbnailUrls } from "./feed";
 
-export interface Episode {
-  id: string;
-  title: string;
-  published: string;
-  url: string;
-  /** maxres is not generated for every upload; callers must handle the fallback. */
-  thumbnail: string;
-  thumbnailFallback: string;
-}
-
-export function thumbnailUrls(id: string) {
-  return {
-    thumbnail: `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`,
-    thumbnailFallback: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
-  };
-}
-
-function toEpisode(id: string, title: string, published: string): Episode {
-  return {
-    id,
-    title,
-    published,
-    url: `https://www.youtube.com/watch?v=${id}`,
-    ...thumbnailUrls(id),
-  };
-}
-
-/** Parse a YouTube channel feed. Exported so it can be tested without a network. */
-export function parseFeed(xml: string): Episode[] {
-  const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: "@_" });
-  const doc = parser.parse(xml);
-  const raw = doc?.feed?.entry;
-  if (!raw) return [];
-
-  const entries = Array.isArray(raw) ? raw : [raw];
-  return entries
-    .map((e) => {
-      const id = e?.["yt:videoId"];
-      const title = e?.title;
-      const published = e?.published;
-      if (typeof id !== "string" || !id) return null;
-      return toEpisode(id, String(title ?? "Untitled episode"), String(published ?? ""));
-    })
-    .filter((e): e is Episode => e !== null);
-}
+import type { Episode } from "./feed";
 
 /**
  * Fetch the feed. Never throws and never returns an empty list: a network error,
  * a malformed body, or an empty feed all fall through to the committed dataset.
+ *
+ * That silence is deliberate for the visitor — a hero of real-but-old episodes
+ * beats an empty one — but it means a broken feed is invisible from the site
+ * alone. The scheduled refresh job is what turns that silence into an alarm.
  */
 export async function getEpisodes(limit = 12): Promise<Episode[]> {
   try {
     const res = await fetch(FEED, {
       // ISR: rebuild the page at most once an hour.
       next: { revalidate: 3600 },
-      headers: { "user-agent": "memesandmarkets.com" },
+      headers: { "user-agent": FEED_UA },
     });
     if (!res.ok) return fallbackEpisodes(limit);
     const parsed = parseFeed(await res.text());

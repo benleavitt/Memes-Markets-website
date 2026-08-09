@@ -33,6 +33,9 @@ export function OrbitCard({
       data-analytics="episode_open"
       data-analytics-id={episode.id}
       data-analytics-surface="orbit"
+      // Without this, dragging the belt from on top of a card starts a native
+      // link/image drag instead, and the belt stops following the pointer.
+      draggable={false}
       className="mm-orbit-card group block w-[210px] rounded-[24px] border p-2 no-underline"
       style={{
         background: "var(--mm-surface)",
@@ -49,6 +52,7 @@ export function OrbitCard({
           height={109}
           sizes="210px"
           priority={priority}
+          draggable={false}
           className="block h-auto w-full"
           style={{ background: "var(--mm-surface-raised)" }}
         />

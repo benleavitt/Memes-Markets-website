@@ -25,12 +25,23 @@
 export const ORBIT = {
   /** Cards on the belt. Kept at 12 on every breakpoint (eng review D4). */
   COUNT: 12,
-  /** Orbit radius in design px. */
-  RADIUS: 430,
-  /** Vertical semi-axis. The belt is an ellipse because we look down on it. */
-  RADIUS_Y: 250,
-  /** Camera distance. Larger = flatter perspective. */
-  DEPTH: 1900,
+  /**
+   * Orbit radius in design px. Mirrors --mm-orbit-r.
+   *
+   * This is what sets whether the belt reads as organised or as a pile. Twelve
+   * 210px cards need more than 2520px of circumference to sit apart; at the old
+   * 345px radius there was only 2168px, so adjacent cards overlapped by ~50px on
+   * screen no matter what else was tuned. 470px opens a ~43px gap between the
+   * front cards. Drop below about 435 and they start touching again.
+   */
+  RADIUS: 470,
+  /**
+   * Vertical semi-axis. The belt is an ellipse because we look down on it.
+   * This is RADIUS * sin(12deg), the tilt the CSS actually applies.
+   */
+  RADIUS_Y: 98,
+  /** Camera distance. Larger = flatter perspective. Mirrors the stage perspective. */
+  DEPTH: 2200,
   /** Card width at the nearest point. */
   CARD_W: 210,
   /** Card height at the nearest point. */

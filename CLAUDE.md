@@ -10,7 +10,11 @@ the wordmark is the header.
 |---|---|---|
 | Design tokens | `styles/tokens.css` | **Generated from Figma. Never hand-edit.** Run `npm run tokens`. |
 | Orbit geometry | `lib/orbit.ts` | Single source of truth for the hero sphere maths, shared with the Figma mock. |
-| Episode data | `lib/episodes.ts` | YouTube RSS, no API key. Falls back to `content/episodes-fallback.json`. |
+| Globe coastlines | `components/hero/globe-paths.ts` | **Generated from Natural Earth. Never hand-edit.** Run `npm run globe`; move the camera via `CENTRE` in `scripts/generate-globe.mjs`. |
+| Episode data | `lib/episodes.ts` | YouTube RSS on hourly ISR, no API key. Falls back to `content/episodes-fallback.json`. |
+| Feed parsing | `lib/feed.ts` | The URL and `parseFeed`. Imports no JSON on purpose, so plain Node can load it — see the note in the file. |
+| Newsletter | `lib/newsletter.ts` | Substack signup, proxied through `/api/subscribe` because the endpoint sends no CORS headers. Endpoint is undocumented; `lib/newsletter.test.ts` pins the response shapes. |
+| Episode fallback | `content/episodes-fallback.json` | **Generated. Never hand-edit.** Run `npm run episodes:refresh`; a scheduled Action keeps it current. |
 | Design file | Figma `qUhg8iR0L0TAOqv3QQ7pAM` | Pages: Foundations, Components, Home, About. |
 | Past decisions | `gstack-decision-search` | Architecture calls and their rationale. Query before re-litigating one. |
 | Phase checklist | `TODOS.md` | |
@@ -24,6 +28,12 @@ the wordmark is the header.
 3. **Every footer carries this verbatim:** "For education and entertainment only.
    Not financial, legal, tax, or investment advice."
 4. **Real episode titles only.** Pull from the feed. Never invent episode numbers.
+
+5. **`getEpisodes` never throws and never returns empty.** That is deliberate — a
+   hero of real-but-old episodes beats an empty one — but it means a broken feed
+   is invisible from the site. `.github/workflows/refresh-episodes.yml` is the
+   only thing that will ever tell you, by going red. Do not "fix" a failing run by
+   loosening the check; the orbit is frozen whenever it fails.
 
 ## Testing
 

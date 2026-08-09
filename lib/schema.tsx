@@ -1,7 +1,6 @@
 import { HOSTS, POSITIONING, SCHEDULE } from "@/content/platforms";
 import type { Episode } from "@/lib/episodes";
-
-export const SITE_URL = "https://memesandmarkets.com";
+import { siteUrl } from "@/lib/site";
 
 /**
  * JSON-LD. Google has a first-class understanding of PodcastSeries, and this is
@@ -19,7 +18,7 @@ export function podcastSeriesSchema(episodes: Episode[]) {
     "@type": "PodcastSeries",
     name: "Memes & Markets",
     alternateName: "M&M",
-    url: SITE_URL,
+    url: siteUrl(),
     description: `${POSITIONING}. ${SCHEDULE}.`,
     inLanguage: "en",
     webFeed:
@@ -39,7 +38,7 @@ export function podcastSeriesSchema(episodes: Episode[]) {
       url: e.url,
       datePublished: e.published,
       image: e.thumbnail,
-      partOfSeries: { "@type": "PodcastSeries", name: "Memes & Markets", url: SITE_URL },
+      partOfSeries: { "@type": "PodcastSeries", name: "Memes & Markets", url: siteUrl() },
     })),
   };
 }
@@ -48,12 +47,12 @@ export function aboutSchema() {
   return {
     "@context": "https://schema.org",
     "@type": "AboutPage",
-    url: `${SITE_URL}/about`,
+    url: `${siteUrl()}/about`,
     name: "About Memes & Markets",
     mainEntity: {
       "@type": "PodcastSeries",
       name: "Memes & Markets",
-      url: SITE_URL,
+      url: siteUrl(),
       author: HOSTS.split(" & ").map((name) => ({ "@type": "Person", name })),
     },
   };

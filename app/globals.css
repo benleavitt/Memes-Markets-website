@@ -143,14 +143,52 @@
 }
 
 :root {
-  --mm-orbit-r: 345px;
+  /*
+   * Belt radius. Mirrors ORBIT.RADIUS in lib/orbit.ts — that file is the source
+   * of truth and these two must not drift apart.
+   *
+   * This is the number that decides whether the belt reads as organised or as a
+   * pile. Twelve 210px cards need more than 2520px of circumference to sit apart;
+   * at the old 345px there was only 2168px, so neighbouring cards overlapped by
+   * ~50px on screen and no amount of opacity tuning hid it. 470px opens a ~43px
+   * gap between the front cards. Below about 435 they start touching again.
+   */
+  --mm-orbit-r: 470px;
   --mm-orbit-scale: 1;
   /* The globe's radius. Smaller than the orbit radius so the cards ride OUTSIDE
      the sphere surface rather than clipping through it. */
   --mm-globe-r: 300px;
-  /* Shared centre for the globe and the belt. Both must agree or the cards stop
-     looking like they are going round anything. */
-  --mm-globe-y: 300px;
+  /* The belt's centre of rotation, and the origin every slot is placed from. */
+  --mm-globe-y: 250px;
+  /*
+   * How far the globe's centre sits BELOW the belt's.
+   *
+   * These used to be the same number. They are not any more, and the reason is
+   * perspective: the belt is tilted rotateX(-12deg), so the near card lands
+   * RADIUS * sin(12deg) below the belt's centre on screen — 98px at the current
+   * radius. With concentric centres that put the whole visible card arc across
+   * the globe's underside and pushed the mark below the fold on a laptop.
+   *
+   * Dropping the globe cancels most of that: the cards ride the globe's middle
+   * rather than its bottom, and the mark climbs onto the upper cap. They still
+   * circle it — the belt is still centred on the globe horizontally and still
+   * passes in front of and behind it — they just sit higher on its face.
+   *
+   * It is deliberately a little under the full 98px, because this number is also
+   * the mark's headroom. The crown sits at (drop - 50) and the card band starts
+   * at a fixed 226, so every pixel of drop is a pixel of space the mark loses
+   * between the two. 62 leaves enough for the mark to clear both.
+   */
+  --mm-globe-drop: 62px;
+  /*
+   * How far above the belt centre the M&M mark sits.
+   *
+   * The mark is squeezed between the globe's crown above and the card band below,
+   * and at this radius that gap is only about 214px for a 158px mark. 136 splits
+   * the ~56px of slack roughly evenly: ~23px clear of the crown, ~33px clear of
+   * the thumbnails.
+   */
+  --mm-core-rise: 136px;
 }
 
 .mm-orbit-stage {
@@ -175,6 +213,8 @@
   /* Vertical gestures still scroll the page; only horizontal drag turns the belt. */
   touch-action: pan-y;
   cursor: grab;
+  /* Above the globe, below the mark. */
+  z-index: 1;
 }
 .mm-orbit-belt:active {
   cursor: grabbing;
@@ -210,74 +250,160 @@
 @media (max-width: 767px) {
   :root {
     --mm-orbit-scale: 0.62;
+    --mm-globe-y: 175px;
     --mm-globe-r: 178px;
-    --mm-globe-y: 190px;
-    --mm-orbit-r: 345px;
+    /* The belt is scaled to 0.62 here, so every offset it produces — and so both
+       of the numbers that answer to it — is 0.62 of the desktop one. */
+    --mm-globe-drop: 38px;
+    --mm-core-rise: 78px;
   }
   .mm-orbit-stage {
     height: 400px;
   }
 }
 
-/* The globe itself.
+/* The globe.
  *
- * No filter: blur() — the rim is gradient stops. The earlier no-blur rule was
- * about per-frame repaints, and this element never animates, but gradients are
- * cheaper and sharper here anyway.
+ * No filter: blur() anywhere — every soft edge here is a gradient stop or a
+ * box-shadow. This element never animates, but blur would still cost a full
+ * repaint of a surface larger than the viewport on every scroll composite.
  *
- * Layer order in the stage:
- *   globe  ->  belt (far half hidden by backface-visibility)  ->  logo
+ * Radial gradients are sized `closest-side` throughout, never left to default.
+ * On a square box the default is farthest-CORNER — 1.41x the radius — so a stop
+ * meant for the rim lands outside the border-radius clip and vanishes. That is
+ * exactly how the previous atmosphere ring managed to render nothing at all.
+ *
+ * Paint order in the stage:
+ *   globe -> belt (far half hidden by backface-visibility) -> mark
  * so cards sweep across the globe's face and the mark stays legible on top.
  */
 .mm-globe {
   position: absolute;
   left: 50%;
-  top: var(--mm-globe-y);
+  top: calc(var(--mm-globe-y) + var(--mm-globe-drop));
   width: calc(var(--mm-globe-r) * 2);
   height: calc(var(--mm-globe-r) * 2);
   transform: translate(-50%, -50%);
   border-radius: 50%;
+  /* Clips the land layer to the sphere. */
+  overflow: hidden;
   pointer-events: none;
-  background: repeating-linear-gradient(
-      to bottom,
-      rgb(255 255 255 / 4%) 0 1px,
-      transparent 1px 24px
-    ),
-    radial-gradient(circle at 50% 26%, #2a2129 0%, #1a141c 34%, #100c12 62%, #08070a 100%);
-  /* lit from above */
-  box-shadow: inset 0 26px 50px -24px rgb(255 90 80 / 45%),
-    /* and falling into shadow at the bottom */
-    inset 0 -70px 90px -50px rgb(0 0 0 / 95%), 0 0 160px rgb(255 0 0 / 28%);
-}
-/* The atmosphere. Masked to the upper half so it hugs the top silhouette the way
-   a lit sphere does, instead of ringing the whole circle evenly. */
-.mm-globe::before {
-  content: "";
-  position: absolute;
-  inset: -10px;
-  border-radius: 50%;
+  z-index: 0;
+  /* The lit ocean, light source high and slightly forward. The dark end stops at
+     a red rather than at black: the land is #0a0508, and an ocean that reaches
+     black too has nothing left to silhouette the continents against. The shade
+     layer is what takes the south of the sphere down into night. */
   background: radial-gradient(
-    circle,
-    transparent 0%,
-    transparent 69%,
-    rgb(255 60 45 / 70%) 72%,
-    rgb(255 150 140 / 100%) 75.5%,
-    rgb(255 50 35 / 60%) 79%,
-    transparent 90%
+    ellipse 74% 62% at 50% 22%,
+    #ff6a52 0%,
+    #f42213 24%,
+    #bd1512 48%,
+    #86100f 72%,
+    #550b0c 100%
   );
-  mask-image: linear-gradient(to bottom, #000 0%, #000 34%, transparent 72%);
-  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 34%, transparent 72%);
+  /* Outer bloom only. The rim line itself is .mm-globe-limb, which has to paint
+     above the shading rather than under it. */
+  box-shadow: 0 0 24px rgb(255 70 45 / 50%), 0 0 120px 8px rgb(255 0 0 / 34%), 0 0 240px
+    30px rgb(255 0 0 / 16%);
 }
-/* Specular sheen on the upper face. */
-.mm-globe::after {
-  content: "";
+
+.mm-globe-land {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+/* One <path> holding every landmass, so `evenodd` is what carves the inland seas
+   and lakes back out of it — Hudson Bay, the Caspian, the Great Lakes are inner
+   rings of the same fill. `nonzero` would flood them solid. */
+.mm-globe-land-path {
+  fill: #0a0508;
+  fill-opacity: 0.92;
+  fill-rule: evenodd;
+  stroke: rgb(255 148 128 / 30%);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+/* Limb darkening, terminator and scanlines — one element, because all three are
+   the same idea: how much light reaches this part of the sphere. */
+.mm-globe-shade {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: radial-gradient(
-    ellipse 55% 35% at 50% 16%,
-    rgb(255 255 255 / 7%) 0%,
-    transparent 100%
+  background: repeating-linear-gradient(
+      to bottom,
+      rgb(255 255 255 / 5%) 0 1px,
+      transparent 1px 5px
+    ), /* falls into its own shadow going south */
+    linear-gradient(
+      to bottom,
+      transparent 0%,
+      transparent 34%,
+      rgb(0 0 0 / 16%) 58%,
+      rgb(0 0 0 / 40%) 78%,
+      rgb(0 0 0 / 62%) 100%
+    ),
+    /* and darkens towards the limb. Both of these are deliberately gentle: they
+       are the layers that swallow the continents, and a globe whose geography is
+       only legible across the top third is not worth drawing. */
+    radial-gradient(
+      circle closest-side at 50% 50%,
+      transparent 60%,
+      rgb(0 0 0 / 16%) 85%,
+      rgb(0 0 0 / 38%) 100%
+    );
+}
+
+/*
+ * Fades the globe into the page at the bottom of the stage.
+ *
+ * The stage is `overflow: hidden` (it has to be — the belt swings wider than the
+ * viewport), and the globe's outer bloom is a 240px box-shadow. So the glow was
+ * being cut off mid-falloff, leaving a hard horizontal seam straight across the
+ * page right above "Drag to spin".
+ *
+ * Sits above the globe and below the belt, so it dissolves the sphere and its
+ * bloom without touching the thumbnails. Full-bleed rather than the width of the
+ * globe, because the bloom is wider than the globe is.
+ */
+.mm-globe-horizon {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 220px;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgb(11 11 13 / 55%) 46%,
+    var(--mm-base) 88%
+  );
+}
+
+/* The atmosphere. A full inset ring, masked so it burns brightest across the top
+   of the silhouette and falls away underneath — a lit sphere does not rim evenly. */
+.mm-globe-limb {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2px rgb(255 232 226 / 92%), inset 0 0 18px 2px
+    rgb(255 92 68 / 75%), inset 0 26px 60px -26px rgb(255 120 96 / 45%);
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 38%,
+    rgb(0 0 0 / 45%) 72%,
+    rgb(0 0 0 / 22%) 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 38%,
+    rgb(0 0 0 / 45%) 72%,
+    rgb(0 0 0 / 22%) 100%
   );
 }
 
@@ -291,34 +417,57 @@
 .mm-orbit-core {
   position: absolute;
   left: 50%;
-  /* On the globe's upper cap, clear of the card band. The near cards ride about
-     72px below the globe centre once perspective is applied, so anything lower
-     than this gets a thumbnail through the middle of the mark. */
-  top: calc(var(--mm-globe-y) - 148px);
+  /* On the globe's upper cap, in the gap between the crown and the card band.
+     Raising --mm-core-rise past the crown breaks the globe's silhouette; lowering
+     it past about 110px puts a thumbnail through the middle of the mark. */
+  top: calc(var(--mm-globe-y) - var(--mm-core-rise));
   transform: translate(-50%, -50%);
   display: grid;
   place-items: center;
   pointer-events: none;
   z-index: 2;
 }
+/*
+ * The scrim the mark sits on.
+ *
+ * This used to be a red glow, which was exactly backwards. The arrow in the mark
+ * is pure #FF0000 — the same red as the globe's lit ocean — so against the
+ * surface it runs about 1.05:1 and simply disappears, and a red glow behind it
+ * added more of the colour it was already losing against.
+ *
+ * A dark scrim instead. #FF0000 on near-black is 5.25:1, so the arrow reads as
+ * clearly as the white M does, and neither needs the brand colour altered.
+ */
 .mm-orbit-core::before {
   content: "";
   grid-area: 1 / 1;
-  width: 280px;
-  height: 280px;
+  width: 330px;
+  height: 330px;
   border-radius: 999px;
   background: radial-gradient(
-    circle,
-    rgb(255 0 0 / 22%) 0%,
-    rgb(255 0 0 / 8%) 45%,
-    transparent 70%
+    circle closest-side,
+    rgb(4 2 3 / 88%) 0%,
+    rgb(4 2 3 / 74%) 40%,
+    rgb(4 2 3 / 34%) 64%,
+    transparent 80%
   );
 }
 .mm-orbit-core img {
   grid-area: 1 / 1;
   height: 158px;
   width: auto;
-  filter: drop-shadow(0 6px 18px rgb(0 0 0 / 70%));
+  /*
+   * Stacked halos, not a scrim, are what actually rescue the arrow. They hug its
+   * shape, so it stays defined where the scrim has faded to nothing — the tip
+   * reaches up towards the limb, which is the brightest part of the sphere — and
+   * again when a thumbnail passes underneath it.
+   *
+   * Three at 0 offset build up into roughly a 2px dark keyline. The no-blur rule
+   * this file keeps elsewhere is about full-viewport surfaces repainting every
+   * frame; this is a 158px image that never animates.
+   */
+  filter: drop-shadow(0 0 1px rgb(0 0 0 / 98%)) drop-shadow(0 0 2px rgb(0 0 0 / 92%))
+    drop-shadow(0 0 6px rgb(0 0 0 / 78%)) drop-shadow(0 6px 18px rgb(0 0 0 / 70%));
 }
 
 @media (max-width: 767px) {
@@ -326,8 +475,8 @@
     height: 84px;
   }
   .mm-orbit-core::before {
-    width: 210px;
-    height: 210px;
+    width: 172px;
+    height: 172px;
   }
 }
 
@@ -337,4 +486,101 @@
     /* No drift at all. Drag and the arrow keys still work. */
     animation: none;
   }
+}
+
+/* ---------------------------------------------------------------------------
+ * The More info panel.
+ *
+ * A native <dialog>, so it renders in the top layer: no z-index here competes
+ * with the orbit, and ::backdrop is the browser's own scrim rather than a
+ * fixed-position div we have to keep above everything.
+ *
+ * No backdrop-filter. Blurring a full-viewport backdrop is the same repaint cost
+ * the hero refuses to pay, and behind an opaque panel it buys nothing.
+ * ------------------------------------------------------------------------- */
+.mm-panel {
+  width: min(1120px, calc(100vw - 2rem));
+  max-height: min(88vh, 1000px);
+  /* Centring a modal <dialog> takes both: `inset: 0` gives auto margins something
+     to distribute, and without it the UA anchors the box to the top-left. */
+  inset: 0;
+  margin: auto;
+  padding: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--mm-border-strong);
+  border-radius: 20px;
+  background: var(--mm-base);
+  color: var(--mm-text);
+  /* The panel hovers: a hard shadow to lift it off the page, and a red bloom so
+     it reads as part of the hero rather than a system dialog. */
+  box-shadow: 0 40px 120px -20px rgb(0 0 0 / 85%), 0 0 90px rgb(255 0 0 / 18%);
+}
+.mm-panel::backdrop {
+  background: rgb(4 3 5 / 82%);
+}
+
+.mm-panel-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.25rem 1rem;
+  background: var(--mm-base);
+  border-bottom: 1px solid var(--mm-border);
+}
+@media (min-width: 640px) {
+  .mm-panel-head {
+    padding: 1.5rem 2rem 1.25rem;
+  }
+}
+
+.mm-panel-close {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border: 1px solid var(--mm-border-strong);
+  border-radius: 999px;
+  background: var(--mm-surface);
+  color: var(--mm-text);
+  transition: background-color 150ms, border-color 150ms;
+}
+.mm-panel-close:hover {
+  background: var(--mm-accent);
+  border-color: transparent;
+  color: var(--mm-text-on-accent);
+}
+
+/* The one primary CTA. 19px/700 is load-bearing: white on --mm-accent is 4.0:1,
+   which only passes as "large text". Shrinking it needs --mm-accent-deep. */
+.mm-cta {
+  background: var(--mm-accent);
+  color: var(--mm-text-on-accent);
+  font-family: var(--mm-font-display);
+  font-weight: 700;
+  font-size: 19px;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+
+/*
+ * Hero tagline.
+ *
+ * type-heading-lg is a flat 28px from the generated token file, which is right
+ * where it is used elsewhere (host names, the panel wordmark) but too heavy
+ * directly under a full-bleed wordmark: on a 1512px laptop it reads as a second
+ * headline and pushes the globe towards the fold. Overridden here rather than in
+ * styles/tokens.css, which is generated from Figma and must not be hand-edited.
+ *
+ * Fluid so it holds the same relation to the wordmark at every width — the
+ * wordmark is sized from container width, so a fixed px tagline drifts out of
+ * proportion with it on wide screens.
+ */
+.mm-hero-tagline {
+  font-size: clamp(17px, 1.45vw, 26px);
 }
