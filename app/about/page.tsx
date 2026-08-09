@@ -29,7 +29,7 @@ export default function About() {
           About
         </p>
         <h1 className="type-display-lg mt-4 max-w-[18ch] text-balance">
-          Web3&rsquo;s live podcast
+          Memes &amp; Markets
         </h1>
         <p
           className="type-body-lg mt-6 max-w-[62ch]"

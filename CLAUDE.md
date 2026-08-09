@@ -1,6 +1,6 @@
 # Memes & Markets — website
 
-Two-page marketing site (Home, About) for Web3's live podcast. Hosts Keith D and
+Two-page marketing site (Home, About) for the Memes & Markets podcast. Hosts Keith D and
 Ben Leavitt, live Tuesdays & Thursdays. Structural model is tbpn.com: no nav bar,
 the wordmark is the header.
 

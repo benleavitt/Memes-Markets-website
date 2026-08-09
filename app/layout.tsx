@@ -26,14 +26,14 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
   title: {
-    default: "Memes & Markets — Web3's live podcast",
+    default: "Memes & Markets",
     template: "%s — Memes & Markets",
   },
   description: `${POSITIONING}. ${SCHEDULE}, hosted by Keith D and Ben Leavitt.`,
   openGraph: {
     type: "website",
     siteName: "Memes & Markets",
-    title: "Memes & Markets — Web3's live podcast",
+    title: "Memes & Markets",
     description: `${POSITIONING}. ${SCHEDULE}.`,
   },
 };

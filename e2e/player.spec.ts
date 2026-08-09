@@ -28,11 +28,11 @@ test.describe("floating live player", () => {
     // Client-side navigation, the way a visitor does it.
     await page.getByRole("link", { name: "About", exact: true }).click();
     await expect(page).toHaveURL(/\/about$/);
-    // The About h1 is the positioning line, not the word "About" — that is the
-    // eyebrow above it. This assertion is only here to prove the new route
-    // actually rendered before the stamp is checked.
+    // The About h1 is the show name, not the word "About" — that is the eyebrow
+    // above it. This assertion is only here to prove the new route actually
+    // rendered before the stamp is checked.
     await expect(page.getByRole("heading", { level: 1 })).toContainText(
-      "Web3’s live podcast",
+      "Memes & Markets",
     );
 
     // Same node, therefore never unmounted, therefore a stream would still be playing.
