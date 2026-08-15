@@ -17,13 +17,21 @@ export interface Platform {
   href: string;
 }
 
+/**
+ * The show's own channel, pulled out of the list because the footer prints its
+ * handle as text rather than as an icon. It is the handle for the show — note
+ * the `Pod` suffix, which is not decoration: youtube.com/@MemesandMarkets is a
+ * 404, so dropping it gives you a dead link that looks right.
+ */
+export const SHOW_CHANNEL: Platform = {
+  id: "youtube",
+  label: "YouTube",
+  handle: "@MemesandMarketsPod",
+  href: "https://www.youtube.com/@MemesandMarketsPod",
+};
+
 export const PLATFORMS: Platform[] = [
-  {
-    id: "youtube",
-    label: "YouTube",
-    handle: "@MemesandMarketsPod",
-    href: "https://www.youtube.com/@MemesandMarketsPod",
-  },
+  SHOW_CHANNEL,
   {
     id: "twitch",
     label: "Twitch",
@@ -56,13 +64,6 @@ export const PLATFORMS: Platform[] = [
     href: "https://memesandmarkets.com",
   },
 ];
-
-/** The clips channel. Deliberately not in the seven — it lives in the footer. */
-export const HIGHLIGHTS = {
-  label: "Highlights",
-  handle: "@MandMHighlights",
-  href: "https://www.youtube.com/@MandMHighlights",
-};
 
 export const HOSTS = "Keith D & Ben Leavitt";
 export const SCHEDULE = "Live Tuesdays & Thursdays";

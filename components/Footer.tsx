@@ -1,6 +1,12 @@
 import { NewsletterForm } from "@/components/ui/NewsletterForm";
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
-import { DISCLAIMER, HIGHLIGHTS, HOSTS, PLATFORMS, SCHEDULE } from "@/content/platforms";
+import {
+  DISCLAIMER,
+  HOSTS,
+  PLATFORMS,
+  SCHEDULE,
+  SHOW_CHANNEL,
+} from "@/content/platforms";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -26,9 +32,8 @@ export function Footer() {
             />
             <div>
               <p
-                className="uppercase"
+                className="mm-wordmark uppercase"
                 style={{
-                  fontFamily: "var(--mm-font-display)",
                   fontWeight: 900,
                   fontSize: "22px",
                   letterSpacing: "-0.03em",
@@ -47,14 +52,17 @@ export function Footer() {
             <Link className="type-label-lg uppercase hover:underline" href="/about">
               About
             </Link>
+            {/* The one place the show's handle is printed rather than drawn as
+                an icon, so it is the show's own — not the clips channel, which
+                used to sit here and read like the main account. */}
             <a
               className="type-label-lg uppercase hover:underline"
               style={{ color: "var(--mm-text-2)" }}
-              href={HIGHLIGHTS.href}
+              href={SHOW_CHANNEL.href}
               target="_blank"
               rel="noreferrer noopener"
             >
-              {HIGHLIGHTS.handle}
+              {SHOW_CHANNEL.handle}
             </a>
           </nav>
 
