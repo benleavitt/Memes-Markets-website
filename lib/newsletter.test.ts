@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { interpret, looksLikeEmail } from "./newsletter";
+import { interpret, looksLikeEmail, redactAddresses } from "./newsletter";
 
 /**
  * Substack's subscribe endpoint is undocumented, so these tests are the record of
@@ -119,5 +119,39 @@ describe("interpret", () => {
       expect(interpret(500, junk).ok).toBe(false);
     }
     expect(interpret(200, "<html>")).toEqual({ ok: true, requiresConfirmation: false });
+  });
+});
+
+/**
+ * The route logs Substack's message so a failing integration is not silent. These
+ * pin the promise that an address cannot ride along in it, whatever Substack
+ * decides to put there.
+ */
+describe("redactAddresses", () => {
+  it("removes an address wherever it appears in the sentence", () => {
+    expect(redactAddresses("someone@example.com was rejected")).toBe(
+      "[address] was rejected",
+    );
+    expect(redactAddresses("We could not validate ben+markets@mail.example.co.uk")).toBe(
+      "We could not validate [address]",
+    );
+  });
+
+  it("handles more than one, and addresses in punctuation", () => {
+    expect(redactAddresses("a@b.co and c@d.co")).toBe("[address] and [address]");
+    expect(redactAddresses("rejected (keith@example.com)")).toBe("rejected ([address])");
+    expect(redactAddresses('"ben@example.com" is blocked')).toBe(
+      '"[address]" is blocked',
+    );
+  });
+
+  it("leaves ordinary messages alone", () => {
+    for (const msg of [
+      "Please enter a valid email",
+      "We were unable to validate your email domain",
+      "",
+    ]) {
+      expect(redactAddresses(msg)).toBe(msg);
+    }
   });
 });

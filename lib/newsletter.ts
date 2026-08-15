@@ -55,6 +55,23 @@ export function looksLikeEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
 
+/**
+ * Strip anything email-shaped out of a string before it reaches a log.
+ *
+ * /api/subscribe is deliberate about never logging an address, but the one thing
+ * it does log is Substack's own `msg` — third-party text, whose contents are not
+ * this codebase's to promise anything about. The observed 400 bodies keep the
+ * address in a separate `value` field that `interpret` already drops, so nothing
+ * leaks today; this makes that true by construction instead of by observation.
+ *
+ * Deliberately looser than `looksLikeEmail`: that one decides whether to spend a
+ * round trip and should not reject valid addresses, this one decides what reaches
+ * a log and should over-match rather than miss one.
+ */
+export function redactAddresses(text: string): string {
+  return text.replace(/[^\s@<>()[\]",;:]+@[^\s@<>()[\]",;:]+/g, "[address]");
+}
+
 interface SubstackError {
   msg?: string;
   param?: string;
