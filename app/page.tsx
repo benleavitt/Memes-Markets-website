@@ -62,17 +62,12 @@ export default async function Home() {
           <OrbitSphere episodes={episodes} />
         </div>
 
-        <p
-          className="type-mono-label mt-2 flex items-center gap-2.5"
-          style={{ color: "var(--mm-text-2)" }}
-        >
+        {/* The caption used to carry a red dot and an episode count as well. Both
+            are gone: the count restated something the orbit is already showing,
+            and the dot was there to separate it from the instruction. What is
+            left is the one thing a visitor cannot work out by looking. */}
+        <p className="type-mono-label mt-2" style={{ color: "var(--mm-text-2)" }}>
           Drag to spin
-          <span
-            aria-hidden="true"
-            className="size-[5px] rounded-full"
-            style={{ background: "var(--mm-accent)" }}
-          />
-          <span style={{ color: "var(--mm-text-3)" }}>{episodes.length} episodes</span>
           <span className="sr-only">
             , or focus an episode and use the left and right arrow keys to turn the
             carousel. Every episode is a link with its title and publication date.
