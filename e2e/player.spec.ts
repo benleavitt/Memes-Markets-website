@@ -113,6 +113,31 @@ test.describe("floating live player", () => {
     await expect(page.getByTestId("live-cta")).toHaveCount(0);
   });
 
+  /**
+   * The embed used to hardcode `parent=localhost&parent=memesandmarkets.com`, and
+   * Twitch refuses to render whenever the embedding host is not in that list. The
+   * site is on neither: production is a *.vercel.app address until a domain is
+   * bought, and memesandmarkets.com serves the Substack. So this card drew its
+   * border, title and viewer count around Twitch's refusal notice on every
+   * environment that was not a laptop — and nothing caught it, because goLive()
+   * above stubs the Twitch player out of the suite on purpose.
+   *
+   * Asserting on the src rather than on what renders keeps that stub in place: the
+   * claim being tested is "we asked for the right thing", which is exactly the
+   * part that was wrong.
+   */
+  test("the embed names the host it is actually embedded on", async ({ page }) => {
+    await goLive(page);
+    await page.goto("/");
+
+    const embed = page.locator('iframe[title="Memes & Markets live stream"]');
+    await expect(embed).toBeVisible();
+
+    const src = new URL((await embed.getAttribute("src")) ?? "");
+    expect(src.origin).toBe("https://player.twitch.tv");
+    expect(src.searchParams.getAll("parent")).toContain(new URL(page.url()).hostname);
+  });
+
   test("the CTA appears in the panel once the show is on air", async ({ page }) => {
     await goLive(page);
     await page.goto("/");

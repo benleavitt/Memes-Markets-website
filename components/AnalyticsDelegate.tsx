@@ -26,6 +26,13 @@ export function AnalyticsDelegate() {
     const onClick = (e: MouseEvent) => {
       const target = e.target;
       if (!(target instanceof Element)) return;
+      // A click the orbit is swallowing is the tail of a drag, not an episode
+      // being opened. This listener is on `document`, so OrbitSphere's
+      // stopPropagation cannot reach it and the two used to disagree — every
+      // flick that ended over a card logged an episode open that never happened.
+      // See SWALLOW_ATTR in components/hero/OrbitSphere.tsx.
+      if (target.closest("[data-swallow-click]")) return;
+
       const el = target.closest<HTMLElement>("[data-analytics]");
       if (!el) return;
 

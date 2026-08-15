@@ -15,6 +15,13 @@ dist/
 next-env.d.ts
 .vercel/
 
+# NOTE: Assets/ is deliberately NOT ignored. It holds the photo and logo masters,
+# and `npm run photos` derives public/brand/ from them — keeping them tracked is
+# what makes that script runnable from a fresh clone, and CLAUDE.md rule 1 cites
+# the logo master as where the brand red was sampled from. What used to be wrong
+# was not that the masters were here, it was that public/brand/ held byte-identical
+# copies of them; those are now downscaled derivatives, 836 kB against 6.0 MB.
+
 # test artifacts
 coverage/
 playwright-report/

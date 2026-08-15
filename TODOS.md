@@ -16,7 +16,10 @@ gstack decision log (`gstack-decision-search`), not here.
       `node_modules/.bin` shim on Windows (cmd splits the path at `&`), so `npm test`,
       `npm run dev` and `npm run build` all fail. Verified working via
       `node node_modules/<pkg>/...` directly. Rename to `memes-and-markets`.
-- [ ] Compress host photos — 1.3MB and 2.4MB straight off a camera (Phase 4 needs them)
+- [x] Compress host photos — `npm run photos` downscales the masters in `Assets/`
+      into `public/brand/`. 6.0MB of camera originals became 836kB. `public/brand/`
+      used to hold byte-identical copies of the masters; it now holds derivatives,
+      and the masters stay tracked so the script runs from a fresh clone.
 - [ ] Raise or accept the JS budget: empty page is already 103kB First Load
 
 ## Phase 1 — static Home (shippable on its own) — DONE, branch `phase-1-static-home`
@@ -85,7 +88,9 @@ gstack decision log (`gstack-decision-search`), not here.
 - [x] Analytics call sites wired: `platform_click`, `cta_watch_live`,
       `orbit_interact` (once per visit), `episode_open`. **No provider** — that is a
       privacy/product decision. `lib/analytics.ts` is the single function to change.
-- [ ] Pick an analytics provider (Plausible / Vercel / none).
+- [ ] Pick an analytics provider (Plausible / Vercel / none). Note `AnalyticsDelegate`
+      now ignores clicks the orbit is swallowing — before wiring anything, that is the
+      behaviour to sanity-check first, because it is the one that was silently wrong.
 - [ ] **Budget: Home is 112 kB, target was 90 kB.** 103 kB is the Next.js floor.
       Wiring analytics turned `PlatformBar` and `LiveCta` into client components,
       costing ~2 kB. Recoverable: one delegated click listener in the layout reading
@@ -97,6 +102,44 @@ gstack decision log (`gstack-decision-search`), not here.
       so this needs a real decision: forward via an undocumented endpoint (fragile),
       or capture with a provider that has an API and cross-post. Do not start until
       Phases 0-5 are done.
+
+## Audit remediation — DONE except where noted
+
+Full read of the codebase turned up 19 issues nothing in the suite could see.
+Fixed, in severity order:
+
+- [x] **Twitch `parent` was hardcoded** to `localhost` + `memesandmarkets.com`, so the
+      player rendered its chrome around Twitch's refusal notice on every deployed
+      environment. Now read from `window.location.hostname`; e2e pins it.
+- [x] **`vercel.json` `no-store` on `/api/(.*)`** sat on top of the live-status
+      `s-maxage` and cancelled the edge cache. Headers moved into `next.config.ts`,
+      where they also apply to `next dev`.
+- [x] **`/api/subscribe` had no rate limit and no origin check.** Now both, plus a
+      content-length bound. `lib/rate-limit.ts` is deliberately the only file that
+      changes if this ever needs shared state instead of per-isolate counters.
+- [x] **Contrast:** `--mm-text-3` on `--mm-surface` is 4.44:1. The episode date and
+      the player's viewer count moved to `--mm-text-2`.
+- [x] **`lib/orbit.ts` claimed to be a source of truth** for numbers only `globals.css`
+      reads. `lib/orbit.test.ts` now checks the two against each other.
+- [x] **A cancelled drag ate the next tap.** The swallow clears on the next input
+      rather than on a click that never comes.
+- [x] **`parseFeed` would render `[object Object]`** if a title ever grew an attribute,
+      with the scheduled job staying green throughout. Unwrapped, and the job now
+      checks titles.
+- [x] **Four mono font weights loaded, two rendered.** Down to 500 and 600.
+- [x] Phantom `episode_open` on drag-release; belt spacing hardcoded to 12; the
+      `MAX_EMAIL` comment describing a memory guard it was not; no CSP; no Twitter
+      card; Playwright specs excluded from typecheck; `/subscribed` with no state
+      claiming a failure; Substack's message logged unredacted.
+
+- [ ] **Still open — rename the repo folder.** The `&` blocker at the top of this file
+      is the one audit item not fixed here: the folder is this session's working
+      directory with a dev server running in it, so renaming it is the user's call.
+      Everything else on the list is done.
+- [ ] **Review before committing:** `Assets/Kieth&Ben_cover.jpg` was renamed to
+      `Assets/keith-ben-cover.jpg` — the old name misspelled Keith and contained the
+      `&` this repo already has a blocker about. Git will record it as a rename once
+      both halves are staged together.
 
 ## Cut
 

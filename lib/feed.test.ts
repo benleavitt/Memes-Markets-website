@@ -77,6 +77,36 @@ describe("parseFeed", () => {
     expect(parseFeed("")).toEqual([]);
   });
 
+  it("reads a title that carries an attribute", () => {
+    // The regression this exists for: with attributes parsed, <title type="text">
+    // arrives as an object, and String() on it renders "[object Object]" on every
+    // card — while the scheduled feed check stays green, because entries exist and
+    // dates are present. Atom's own spelling, so YouTube could adopt it any day.
+    const attributed = `
+      <entry>
+        <yt:videoId>at1</yt:videoId>
+        <title type="text">Episode with an attribute</title>
+        <published>2026-08-07T00:00:00Z</published>
+      </entry>`;
+    const [ep] = parseFeed(feed(attributed));
+    expect(ep?.title).toBe("Episode with an attribute");
+  });
+
+  it("keeps all-digit ids and titles as strings", () => {
+    // Numeric coercion used to drop these: an id parsed as a number failed the
+    // `typeof id !== "string"` guard and the entry vanished without a trace.
+    const numeric = `
+      <entry>
+        <yt:videoId>12345678901</yt:videoId>
+        <title>2026</title>
+        <published>2026-08-07T00:00:00Z</published>
+      </entry>`;
+    const [ep] = parseFeed(feed(numeric));
+    expect(ep?.id).toBe("12345678901");
+    expect(ep?.title).toBe("2026");
+    expect(ep?.url).toBe("https://www.youtube.com/watch?v=12345678901");
+  });
+
   it("returns nothing if the entry element is ever renamed", () => {
     // The realistic shape of a YouTube format change: still XML, still 200, but
     // the element we key off is gone. This must be empty so the job goes red.
@@ -86,6 +116,14 @@ describe("parseFeed", () => {
 });
 
 describe("committed fallback", () => {
+  it("holds at least a full belt", () => {
+    // The orbit spaces its cards by however many episodes it is given, so a short
+    // fallback no longer leaves a gap — but a cold start with four episodes on the
+    // hero is still a bad day, and this file is only ever read on the day it
+    // matters most. The refresh job keeps 15.
+    expect(fallbackData.episodes.length).toBeGreaterThanOrEqual(12);
+  });
+
   it("is well formed, non-empty, and newest first", () => {
     const eps = fallbackData.episodes;
     expect(eps.length).toBeGreaterThan(0);

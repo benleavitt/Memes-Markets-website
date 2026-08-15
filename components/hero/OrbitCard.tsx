@@ -78,9 +78,13 @@ export function OrbitCard({
         <span className="type-label-lg block" style={{ color: "var(--mm-text)" }}>
           {episode.title}
         </span>
+        {/* --mm-text-2, not --mm-text-3. The card's ground is --mm-surface, where
+            tertiary grey measures 4.44:1 — under the 4.5:1 AA needs for 12px text.
+            (On --mm-base it is 4.76:1, which is why the contrast pass missed it.)
+            The date still reads as secondary to a white title without it. */}
         <span
           className="type-mono-ticker-sm mt-[5px] block uppercase"
-          style={{ color: "var(--mm-text-3)" }}
+          style={{ color: "var(--mm-text-2)" }}
         >
           {formatDate(episode.published)}
         </span>

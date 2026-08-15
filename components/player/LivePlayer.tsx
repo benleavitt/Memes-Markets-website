@@ -7,6 +7,33 @@ const DISMISS_KEY = "mm-player-dismissed";
 const TWITCH_CHANNEL = "memesandmarkets";
 
 /**
+ * The embed URL, including the `parent` list Twitch requires.
+ *
+ * `parent` USED TO BE HARDCODED to `localhost` and `memesandmarkets.com`, and
+ * that was a bug big enough to make this component decorative everywhere it
+ * mattered. Twitch refuses to render whenever the embedding page's hostname is
+ * absent from the list — and the site does not live on either of those. Production
+ * is a `*.vercel.app` address until a domain is bought (DEPLOY.md says to leave
+ * NEXT_PUBLIC_SITE_URL unset until then), and memesandmarkets.com currently serves
+ * the Substack. So every deployed environment drew this card's border, title and
+ * viewer count around Twitch's refusal notice.
+ *
+ * Reading it from `window.location.hostname` means it is the embedding host by
+ * construction, on every environment, with nothing to keep in sync. `localhost`
+ * stays for `next dev`, where the hostname already is localhost but naming it
+ * costs nothing. Ports are excluded from `hostname`, which is what Twitch wants.
+ */
+function embedSrc(host: string, muted: boolean): string {
+  const params = new URLSearchParams({
+    channel: TWITCH_CHANNEL,
+    autoplay: "true",
+    muted: String(muted),
+  });
+  for (const parent of new Set([host, "localhost"])) params.append("parent", parent);
+  return `https://player.twitch.tv/?${params}`;
+}
+
+/**
  * The floating live player. Pinned bottom-left, survives navigation.
  *
  * ONLY EXISTS WHILE THE SHOW IS ON AIR. It used to render an offline face too —
@@ -41,14 +68,17 @@ export function LivePlayer() {
   const status = useLiveStatus();
   const [dismissed, setDismissed] = useState(true); // assume hidden until we've read storage
   const [muted, setMuted] = useState(true);
+  /** null until mounted — see embedSrc for why the host has to come from the browser. */
+  const [host, setHost] = useState<string | null>(null);
 
   // sessionStorage, not localStorage: dismissing means "not this visit", not
   // "never again". A returning viewer should see that the show is live.
   useEffect(() => {
     setDismissed(sessionStorage.getItem(DISMISS_KEY) === "1");
+    setHost(window.location.hostname);
   }, []);
 
-  if (dismissed || !status.live) return null;
+  if (dismissed || !status.live || host === null) return null;
 
   return (
     <aside
@@ -121,10 +151,18 @@ export function LivePlayer() {
           className="relative overflow-hidden rounded-[10px]"
           style={{ aspectRatio: "16 / 9", background: "var(--mm-surface-raised)" }}
         >
+          {/* The `key` REMOUNTS the iframe on every mute toggle, which reloads the
+              stream and drops the viewer at the live edge. That is a real cost and
+              it is worth naming: the embed exposes no imperative mute, so changing
+              it means changing the URL, and changing an iframe's src is a load
+              either way. It does not undermine the arrangement this file exists for
+              — navigation still never touches the player, only the viewer's own
+              deliberate press does. Driving it properly needs Twitch's Embed JS
+              API, which is a third-party script on every page for one button. */}
           <iframe
             key={muted ? "muted" : "unmuted"}
             title="Memes & Markets live stream"
-            src={`https://player.twitch.tv/?channel=${TWITCH_CHANNEL}&parent=localhost&parent=memesandmarkets.com&autoplay=true&muted=${muted}`}
+            src={embedSrc(host, muted)}
             allow="autoplay; fullscreen"
             className="absolute inset-0 size-full border-0"
           />
@@ -147,7 +185,10 @@ export function LivePlayer() {
           <p className="type-body-sm mt-1" style={{ color: "var(--mm-text-2)" }}>
             Memes &amp; Markets
             {status.viewers !== undefined && (
-              <span className="type-mono-ticker-sm" style={{ color: "var(--mm-text-3)" }}>
+              // Not --mm-text-3. This card's ground is --mm-surface, where tertiary
+              // grey is 4.44:1 — under AA for 12px text. The step down from the
+              // channel name is carried by the mono face instead of by contrast.
+              <span className="type-mono-ticker-sm">
                 {" · "}
                 {status.viewers.toLocaleString("en-GB")} watching
               </span>

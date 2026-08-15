@@ -152,6 +152,32 @@ async function main() {
     );
   }
 
+  /*
+   * Titles, which this job used to take entirely on trust.
+   *
+   * "Reachable, parses, produces the right NUMBER of entries, and every one of
+   * them is garbage" is a real failure mode — it is what a stringified object
+   * looks like when a field grows an attribute — and the checks above sail
+   * straight past it. See the note on `text` in lib/feed.ts.
+   */
+  const brokenTitles = episodes
+    .filter((e) => e.title.includes("[object"))
+    .map((e) => e.id);
+  if (brokenTitles.length) {
+    throw new FeedError(
+      "entries parsed with unreadable titles",
+      `Affected ids: ${brokenTitles.join(", ")}. A title node is no longer a plain\nstring — parseFeed in lib/feed.ts needs to unwrap whatever shape it now has.`,
+    );
+  }
+
+  // One genuinely untitled upload is possible. All of them means the field moved.
+  if (episodes.every((e) => e.title === "Untitled episode")) {
+    throw new FeedError(
+      "no entry carried a title",
+      "Every entry fell back to the placeholder, so the title element has been\nrenamed or nested. parseFeed in lib/feed.ts needs updating.",
+    );
+  }
+
   const current = JSON.parse(readFileSync(OUT, "utf8"));
   const next = {
     _comment:

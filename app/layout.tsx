@@ -24,9 +24,16 @@ const raleway = Raleway({
   variable: "--font-raleway",
   display: "swap",
 });
+// 500 and 600, and nothing else: they are the only mono weights the site renders,
+// through .type-mono-ticker-sm and .type-mono-label. The generated type scale also
+// defines .type-mono-body (400), .type-mono-data-lg (700) and .type-mono-ticker
+// (500), but none of the three has a call site anywhere in the codebase, and
+// next/font preloads every weight it is handed — so declaring four meant two font
+// files fetched on every page to render nothing. Add a weight back the same day
+// something actually asks for it.
 const geistMono = Geist_Mono({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["500", "600"],
   variable: "--font-geist-mono",
   display: "swap",
 });
@@ -41,6 +48,15 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "Memes & Markets",
+    title: "Memes & Markets",
+    description: `${POSITIONING}. ${SCHEDULE}.`,
+  },
+  // Without this X falls back to a small square summary card, so the 1200x630
+  // art that app/opengraph-image.tsx renders never gets shown on the platform
+  // the show actually posts to. The image itself is picked up from the OG tags —
+  // this only tells X how to frame it.
+  twitter: {
+    card: "summary_large_image",
     title: "Memes & Markets",
     description: `${POSITIONING}. ${SCHEDULE}.`,
   },
