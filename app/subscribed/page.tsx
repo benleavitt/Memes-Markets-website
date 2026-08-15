@@ -17,7 +17,18 @@ export const metadata: Metadata = {
  */
 
 const OUTCOMES = {
+  /**
+   * Two success states, because Substack has two. `ok` is the one this
+   * publication actually produces: no double opt-in, so the subscriber is live
+   * immediately and no email is sent. `confirm` is what a publication with
+   * double opt-in returns. The route picks between them from Substack's own
+   * `requires_confirmation` — see lib/newsletter.ts.
+   */
   ok: {
+    heading: "You're subscribed",
+    body: "You'll get the next issue in your inbox. There is no confirmation email to look for.",
+  },
+  confirm: {
     heading: "Check your inbox",
     body: "Substack has sent a confirmation link. The subscription is not active until you click it.",
   },
@@ -34,7 +45,7 @@ const OUTCOMES = {
 type Outcome = keyof typeof OUTCOMES;
 
 function isOutcome(value: string | undefined): value is Outcome {
-  return value === "ok" || value === "invalid" || value === "error";
+  return value !== undefined && Object.hasOwn(OUTCOMES, value);
 }
 
 export default async function Subscribed({

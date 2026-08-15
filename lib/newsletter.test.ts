@@ -31,12 +31,44 @@ describe("looksLikeEmail", () => {
 });
 
 describe("interpret", () => {
-  it("treats a 200 as a signup", () => {
-    expect(interpret(200, { didSignup: true })).toEqual({ ok: true });
+  /**
+   * Verbatim from a live signup on 2026-08-15, kept whole rather than trimmed to
+   * the two fields we read — the next person to debug this wants to see exactly
+   * what Substack sends, including the parts we ignore.
+   *
+   * `requires_confirmation: false` is the important one. It is why no
+   * confirmation email arrives for this publication, and why the success copy
+   * must not promise one.
+   */
+  const REAL_SUCCESS = {
+    email: "someone@example.com",
+    prompt_to_login: false,
+    requires_confirmation: false,
+    subscription_id: 1472858009,
+    didSignup: true,
+    referral_token: "8x78jc",
+    hasAppInstalled: false,
+    conversion_id: "node-QDyzIXER0r7UXpPdKKqlmhpecWo8mjnl",
+  };
+
+  it("treats a real signup response as a signup needing no confirmation", () => {
+    expect(interpret(200, REAL_SUCCESS)).toEqual({
+      ok: true,
+      requiresConfirmation: false,
+    });
   });
 
-  it("treats a 200 with no body as a signup", () => {
-    expect(interpret(200, null)).toEqual({ ok: true });
+  it("reports a confirmation step when Substack says it sent one", () => {
+    expect(interpret(200, { ...REAL_SUCCESS, requires_confirmation: true })).toEqual({
+      ok: true,
+      requiresConfirmation: true,
+    });
+  });
+
+  it("assumes no confirmation when the field is missing or not a boolean", () => {
+    for (const body of [{ didSignup: true }, { requires_confirmation: "yes" }, null]) {
+      expect(interpret(200, body)).toEqual({ ok: true, requiresConfirmation: false });
+    }
   });
 
   it("surfaces one message when Substack rejects the address", () => {
@@ -86,6 +118,6 @@ describe("interpret", () => {
     for (const junk of ["<html>", 42, [], { errors: "not-an-array" }]) {
       expect(interpret(500, junk).ok).toBe(false);
     }
-    expect(interpret(200, "<html>")).toEqual({ ok: true });
+    expect(interpret(200, "<html>")).toEqual({ ok: true, requiresConfirmation: false });
   });
 });

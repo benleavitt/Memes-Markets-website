@@ -5,7 +5,7 @@ import { useId, useState } from "react";
 type State =
   | { status: "idle" }
   | { status: "sending" }
-  | { status: "done" }
+  | { status: "done"; requiresConfirmation: boolean }
   | { status: "failed"; message: string; field: boolean };
 
 /**
@@ -48,9 +48,13 @@ export function NewsletterForm() {
         ok?: boolean;
         message?: string;
         field?: boolean;
+        requiresConfirmation?: boolean;
       };
       if (body.ok) {
-        setState({ status: "done" });
+        setState({
+          status: "done",
+          requiresConfirmation: body.requiresConfirmation === true,
+        });
         form.reset();
         return;
       }
@@ -69,6 +73,10 @@ export function NewsletterForm() {
   };
 
   if (state.status === "done") {
+    // Which of these is true is Substack's call, not ours — it reports it per
+    // signup. This publication currently runs without a confirmation step, so
+    // the second branch is what people actually see; the first is here so the
+    // copy stays honest if double opt-in is ever switched on.
     return (
       <p
         className="type-body-md mt-4"
@@ -76,8 +84,21 @@ export function NewsletterForm() {
         // here anyway, and a live region would announce it a second time.
         style={{ color: "var(--mm-text)" }}
       >
-        <strong style={{ color: "var(--mm-accent)" }}>Check your inbox.</strong> Substack
-        has sent a confirmation link — the subscription is not active until you click it.
+        {state.requiresConfirmation ? (
+          <>
+            <strong style={{ color: "var(--mm-accent)" }}>Check your inbox.</strong>{" "}
+            Substack has sent a confirmation link — the subscription is not active until
+            you click it.
+          </>
+        ) : (
+          <>
+            <strong style={{ color: "var(--mm-accent)" }}>
+              You&rsquo;re subscribed.
+            </strong>{" "}
+            You&rsquo;ll get the next issue in your inbox — there is no confirmation email
+            to look for.
+          </>
+        )}
       </p>
     );
   }

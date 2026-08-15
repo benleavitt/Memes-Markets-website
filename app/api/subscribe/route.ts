@@ -1,4 +1,4 @@
-import { looksLikeEmail, subscribe } from "@/lib/newsletter";
+import { SUBSCRIBE_ENDPOINT, looksLikeEmail, subscribe } from "@/lib/newsletter";
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
@@ -70,16 +70,29 @@ export async function POST(request: Request) {
 
   try {
     const result = await subscribe(email);
+    // Substack refusing a signup is otherwise completely silent: the visitor sees
+    // a sentence under the field and nobody who could fix it ever hears. The
+    // address is deliberately not included — see the note at the top of this
+    // file — so this says what went wrong, never to whom.
+    if (!result.ok) {
+      console.warn(`[subscribe] Substack declined a signup: ${result.message}`);
+    }
     if (wantsHtml) {
       // Keep the no-JS wording honest about whose fault it was: Substack
       // rejecting the address is not the same as Substack being unavailable.
-      if (result.ok) return redirect(request, "ok");
+      if (result.ok) {
+        return redirect(request, result.requiresConfirmation ? "confirm" : "ok");
+      }
       return redirect(request, result.field ? "invalid" : "error");
     }
     return json(result.ok ? 200 : 400, result);
-  } catch {
+  } catch (err) {
     // Substack unreachable. Not the visitor's fault and not worth a stack trace
-    // in their face.
+    // in their face — but it must not be invisible to us either.
+    console.error(
+      `[subscribe] could not reach Substack at ${SUBSCRIBE_ENDPOINT}:`,
+      err instanceof Error ? err.message : err,
+    );
     return wantsHtml
       ? redirect(request, "error")
       : json(502, {
