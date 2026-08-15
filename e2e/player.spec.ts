@@ -1,4 +1,32 @@
-import { expect, test } from "@playwright/test";
+import { type Page, expect, test } from "@playwright/test";
+
+/**
+ * Put the site on air for a test.
+ *
+ * The player and the Watch live CTA only exist while the show is broadcasting,
+ * so a suite that does not say otherwise sees neither — there are no Twitch
+ * credentials in CI and /api/live-status correctly answers "off air".
+ *
+ * Stubbing the route rather than setting FORCE_LIVE on the dev server keeps each
+ * test's intent visible in the test, and keeps it working against whatever
+ * server happens to be running (playwright.config reuses an existing one).
+ *
+ * The Twitch embed is stubbed too. Nothing here is testing Twitch's player, and
+ * letting it load makes the suite depend on a third party's CDN being up.
+ */
+async function goLive(page: Page) {
+  await page.route("**/api/live-status", (route) =>
+    route.fulfill({
+      json: { live: true, title: "Test broadcast", viewers: 1234, source: "forced" },
+    }),
+  );
+  await page.route("https://player.twitch.tv/**", (route) =>
+    route.fulfill({
+      contentType: "text/html",
+      body: "<!doctype html><title>stub</title>",
+    }),
+  );
+}
 
 /**
  * The load-bearing test.
@@ -15,6 +43,7 @@ import { expect, test } from "@playwright/test";
  */
 test.describe("floating live player", () => {
   test("survives Home to About without remounting", async ({ page }) => {
+    await goLive(page);
     await page.goto("/");
 
     const player = page.getByTestId("live-player");
@@ -51,6 +80,7 @@ test.describe("floating live player", () => {
   });
 
   test("dismiss hides it and the choice sticks for the visit", async ({ page }) => {
+    await goLive(page);
     await page.goto("/");
     const player = page.getByTestId("live-player");
     await expect(player).toBeVisible();
@@ -61,6 +91,36 @@ test.describe("floating live player", () => {
     // Dismissal is per-visit, so it must survive a navigation but not a new session.
     await page.getByRole("link", { name: "About", exact: true }).click();
     await expect(page.getByTestId("live-player")).toHaveCount(0);
+  });
+
+  /**
+   * The other half of "only when live", and the half that actually regressed
+   * before: both surfaces used to render unconditionally. Off air is the default
+   * state of the site for most of the week, so this is the common case, not the
+   * edge case.
+   */
+  test("neither the player nor the CTA exists off air", async ({ page }) => {
+    await page.route("**/api/live-status", (route) =>
+      route.fulfill({ json: { live: false, source: "twitch" } }),
+    );
+    await page.goto("/");
+
+    await expect(page.getByTestId("live-player")).toHaveCount(0);
+
+    // The CTA lives inside the info panel, so the panel has to be open to know.
+    await page.getByRole("button", { name: "More info" }).click();
+    await expect(page.locator("dialog.mm-panel")).toBeVisible();
+    await expect(page.getByTestId("live-cta")).toHaveCount(0);
+  });
+
+  test("the CTA appears in the panel once the show is on air", async ({ page }) => {
+    await goLive(page);
+    await page.goto("/");
+
+    await page.getByRole("button", { name: "More info" }).click();
+    const cta = page.getByTestId("live-cta");
+    await expect(cta).toBeVisible();
+    await expect(cta).toHaveAttribute("href", /youtube\.com\/@MemesandMarketsPod\/live/);
   });
 });
 
@@ -140,7 +200,9 @@ test.describe("home", () => {
     await page.getByRole("button", { name: "More info" }).click();
     await expect(panel).toBeVisible();
     await expect(panel.getByRole("heading", { name: "Hosted by" })).toBeVisible();
-    await expect(panel.getByRole("heading", { name: "Selected press" })).toBeVisible();
+    await expect(
+      panel.getByRole("heading", { name: "Press & appearances" }),
+    ).toBeVisible();
 
     // The page behind must not scroll while the panel is up.
     await expect(page.locator("html")).toHaveCSS("overflow", "hidden");
