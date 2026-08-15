@@ -1,5 +1,23 @@
+"use client";
+
+import { useLiveStatus } from "@/lib/use-live-status";
+
 /**
- * The one primary CTA on the homepage. There is deliberately only ever one.
+ * "Watch live now". Renders ONLY while the show is actually on air.
+ *
+ * It used to render unconditionally, which meant the site spent most of the week
+ * shouting WATCH LIVE NOW at people who would click it and land on a channel
+ * that was not broadcasting. A permanent live badge teaches visitors to ignore
+ * the one that means it.
+ *
+ * Off air it returns null rather than switching to a countdown or a subscribe
+ * link: this is the panel's only CTA, and a button that changes its mind about
+ * what it does is worse than a row that is simply quieter when nothing is on.
+ *
+ * "Live" comes from Twitch — see lib/live.ts for why Twitch and not YouTube —
+ * while the link goes to YouTube, which is the show's main channel and where
+ * `/live` always resolves to whatever is currently broadcasting. The show goes
+ * out to both at once, so the two agree in practice.
  *
  * Contrast note, load-bearing: white on the brand red (#FF0000) is 4.0:1, which
  * is short of the 4.5:1 WCAG AA needs for normal text. Rather than dull the brand
@@ -14,12 +32,16 @@ export function LiveCta({
   href?: string;
   children?: React.ReactNode;
 }) {
+  const { live } = useLiveStatus();
+  if (!live) return null;
+
   return (
     <a
       href={href}
       target="_blank"
       rel="noreferrer noopener"
       data-analytics="cta_watch_live"
+      data-testid="live-cta"
       className="inline-flex items-center gap-3 rounded-[10px] px-8 py-4 uppercase transition-transform duration-150 hover:scale-[1.02] active:scale-100"
       style={{
         background: "var(--mm-accent)",

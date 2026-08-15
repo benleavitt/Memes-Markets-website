@@ -5,6 +5,7 @@ import { InfoPanelContent } from "@/components/info/InfoPanelContent";
 import { MoreInfo } from "@/components/info/MoreInfo";
 import { POSITIONING, SCHEDULE } from "@/content/platforms";
 import { getEpisodes } from "@/lib/episodes";
+import { ORBIT } from "@/lib/orbit";
 import { JsonLd, podcastSeriesSchema } from "@/lib/schema";
 
 /**
@@ -25,7 +26,9 @@ import { JsonLd, podcastSeriesSchema } from "@/lib/schema";
  * panel's markup renders on the server and only the dialog shell ships as JS.
  */
 export default async function Home() {
-  const episodes = await getEpisodes(12);
+  // ORBIT.COUNT rather than a literal 12: it is what the belt is drawn around,
+  // and lib/orbit.test.ts checks it against the CSS the hero actually renders from.
+  const episodes = await getEpisodes(ORBIT.COUNT);
 
   return (
     <main id="main">
@@ -62,17 +65,12 @@ export default async function Home() {
           <OrbitSphere episodes={episodes} />
         </div>
 
-        <p
-          className="type-mono-label mt-2 flex items-center gap-2.5"
-          style={{ color: "var(--mm-text-2)" }}
-        >
+        {/* The caption used to carry a red dot and an episode count as well. Both
+            are gone: the count restated something the orbit is already showing,
+            and the dot was there to separate it from the instruction. What is
+            left is the one thing a visitor cannot work out by looking. */}
+        <p className="type-mono-label mt-2" style={{ color: "var(--mm-text-2)" }}>
           Drag to spin
-          <span
-            aria-hidden="true"
-            className="size-[5px] rounded-full"
-            style={{ background: "var(--mm-accent)" }}
-          />
-          <span style={{ color: "var(--mm-text-3)" }}>{episodes.length} episodes</span>
           <span className="sr-only">
             , or focus an episode and use the left and right arrow keys to turn the
             carousel. Every episode is a link with its title and publication date.

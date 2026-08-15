@@ -8,11 +8,19 @@ node_modules/
 out/
 build/
 dist/
+.swc/
 
 # generated
 *.tsbuildinfo
 next-env.d.ts
 .vercel/
+
+# NOTE: Assets/ is deliberately NOT ignored. It holds the photo and logo masters,
+# and `npm run photos` derives public/brand/ from them — keeping them tracked is
+# what makes that script runnable from a fresh clone, and CLAUDE.md rule 1 cites
+# the logo master as where the brand red was sampled from. What used to be wrong
+# was not that the masters were here, it was that public/brand/ held byte-identical
+# copies of them; those are now downscaled derivatives, 836 kB against 6.0 MB.
 
 # test artifacts
 coverage/
@@ -22,23 +30,44 @@ blob-report/
 .playwright/
 
 # env — never commit secrets (TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET, etc.)
+#
+# Deliberately `.env.*` rather than only `.env*.local`: the old pattern let a
+# plain `.env.production` through, which is precisely the file most likely to
+# hold a real Substack or Twitch credential. Only the example is allowed back in.
 .env
-.env*.local
+.env.*
 !.env.example
 
-# gstack — installed globally, not vendored
-.claude/skills/gstack/
+# credentials that are never project files, wherever they land
+*.pem
+*.key
+*.p12
 
-# local agent state
-.claude/settings.local.json
+# logs
+*.log
+npm-debug.log*
+yarn-error.log*
 
-# os / editor
+# agent and editor state — local to whoever is sitting here, not part of the app
+#
+# `.claude/*` rather than `.claude/`, so a shared project config can still be
+# committed by adding it to the exceptions below. Everything else in there is
+# machine-local: gstack is installed globally rather than vendored, launch.json
+# points at one person's dev server, settings.local.json is per-user permissions.
+.claude/*
+!.claude/settings.json
+.gstack/
+.vscode/
+.idea/
+
+# os
 .DS_Store
 Thumbs.db
+ehthumbs.db
+desktop.ini
 *.swp
-.idea/
+*~
 
 # local-only: routes npm scripts through bash so an "&" in the repo path
 # does not break .bin shims under cmd. Delete once the folder is renamed.
 .npmrc
-.gstack/

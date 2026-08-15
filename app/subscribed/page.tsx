@@ -17,7 +17,18 @@ export const metadata: Metadata = {
  */
 
 const OUTCOMES = {
+  /**
+   * Two success states, because Substack has two. `ok` is the one this
+   * publication actually produces: no double opt-in, so the subscriber is live
+   * immediately and no email is sent. `confirm` is what a publication with
+   * double opt-in returns. The route picks between them from Substack's own
+   * `requires_confirmation` — see lib/newsletter.ts.
+   */
   ok: {
+    heading: "You're subscribed",
+    body: "You'll get the next issue in your inbox. There is no confirmation email to look for.",
+  },
+  confirm: {
     heading: "Check your inbox",
     body: "Substack has sent a confirmation link. The subscription is not active until you click it.",
   },
@@ -25,16 +36,30 @@ const OUTCOMES = {
     heading: "That address did not look right",
     body: "Have another go — it needs to be a full email address.",
   },
+  busy: {
+    heading: "That is a lot of tries",
+    body: "The signup form is rate limited. Give it a few minutes and go again — nothing is wrong with your address.",
+  },
   error: {
     heading: "That did not go through",
     body: "Substack could not take the signup just now. Nothing was saved, so please try again.",
+  },
+  /**
+   * A bare visit, with no state at all. This used to fall through to `error`,
+   * which told someone who had not submitted anything that their signup had
+   * failed — inventing a problem rather than reporting one. Nobody arrives here
+   * on purpose, but the page should not lie to them when they do.
+   */
+  none: {
+    heading: "Nothing to report",
+    body: "This page shows the result of a newsletter signup. The form is in the footer of every page.",
   },
 } as const;
 
 type Outcome = keyof typeof OUTCOMES;
 
 function isOutcome(value: string | undefined): value is Outcome {
-  return value === "ok" || value === "invalid" || value === "error";
+  return value !== undefined && Object.hasOwn(OUTCOMES, value);
 }
 
 export default async function Subscribed({
@@ -43,7 +68,9 @@ export default async function Subscribed({
   searchParams: Promise<{ state?: string }>;
 }) {
   const { state } = await searchParams;
-  const outcome = OUTCOMES[isOutcome(state) ? state : "error"];
+  // An unrecognised state is treated as no state: it means someone edited the URL
+  // or a link went stale, neither of which is a failed signup.
+  const outcome = OUTCOMES[isOutcome(state) ? state : "none"];
 
   return (
     <main id="main" className="mx-auto w-full max-w-[680px] px-6 pt-24 pb-24">

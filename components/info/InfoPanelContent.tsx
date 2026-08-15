@@ -3,16 +3,16 @@ import { NewsletterForm } from "@/components/ui/NewsletterForm";
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
 import { HOST_LIST } from "@/content/hosts";
 import { PLATFORMS } from "@/content/platforms";
-import { PRESS_SLOTS } from "@/content/press";
+import { PRESS_ITEMS, type PressItem } from "@/content/press";
 import Image from "next/image";
 
 /**
  * Everything inside the More info panel. Split out from the dialog shell so the
  * shell stays about focus, Escape and scroll-lock, and this stays about layout.
  *
- *   studio still   16:9, full width of the panel
+ *   cover          16:9, full width of the panel
  *   hosted by      two cards, real photos
- *   selected press eight slots, all placeholders — see content/press.ts
+ *   press          coverage and guest appearances — see content/press.ts
  *   newsletter     one field
  *   footer row     wordmark and the seven platforms
  *
@@ -23,7 +23,7 @@ import Image from "next/image";
 export function InfoPanelContent() {
   return (
     <div className="px-5 pb-6 sm:px-8 sm:pb-8">
-      <StudioStill />
+      <CoverStill />
 
       <div className="mt-8 grid gap-10 md:grid-cols-2 md:gap-8">
         <section aria-labelledby="info-hosts">
@@ -66,35 +66,18 @@ export function InfoPanelContent() {
         </section>
 
         <section aria-labelledby="info-press">
-          <PanelHeading id="info-press">Selected press</PanelHeading>
+          <PanelHeading id="info-press">Press &amp; appearances</PanelHeading>
           {/* gap-px over a border-coloured background: one hairline between cells,
-              never a doubled 2px seam where two borders meet. */}
+              never a doubled 2px seam where two borders meet.
+              One column, not two — every entry carries a line of prose under the
+              outlet, and two of those side by side wraps each to four lines. */}
           <ul
-            className="mt-5 grid grid-cols-2 gap-px border"
+            className="mt-5 grid gap-px border"
             style={{ background: "var(--mm-border)", borderColor: "var(--mm-border)" }}
           >
-            {PRESS_SLOTS.map((slot) => (
-              <li
-                key={slot.id}
-                className="grid h-[68px] place-items-center px-3"
-                style={{ background: "var(--mm-base)" }}
-              >
-                {slot.logo ? (
-                  <Image
-                    src={slot.logo}
-                    alt={slot.name}
-                    width={132}
-                    height={28}
-                    className="h-auto max-h-7 w-auto"
-                  />
-                ) : (
-                  <span
-                    className="type-mono-ticker-sm text-center uppercase"
-                    style={{ color: "var(--mm-text-3)" }}
-                  >
-                    {slot.name}
-                  </span>
-                )}
+            {PRESS_ITEMS.map((item) => (
+              <li key={item.id} style={{ background: "var(--mm-base)" }}>
+                <PressEntry item={item} />
               </li>
             ))}
           </ul>
@@ -118,7 +101,10 @@ export function InfoPanelContent() {
         style={{ borderColor: "var(--mm-border)" }}
       >
         <div className="flex flex-wrap items-center gap-5">
-          <p className="type-heading-lg uppercase" style={{ letterSpacing: "-0.02em" }}>
+          <p
+            className="type-heading-lg mm-wordmark uppercase"
+            style={{ letterSpacing: "-0.02em" }}
+          >
             Memes &amp; Markets
           </p>
           {/* The live route did not disappear with the old hero CTA, it moved here. */}
@@ -170,33 +156,95 @@ function PanelHeading({ id, children }: { id: string; children: React.ReactNode 
 }
 
 /**
- * Placeholder for the studio still. Drawn rather than shipped as an image file so
- * it is unmistakably a placeholder — a stock photo here would quietly become the
- * final asset. Replace the whole component with an <Image> when the real frame
- * exists.
+ * One press entry. A link when there is something to link to, a plain cell when
+ * there is not. Nothing currently uses the second branch — it is there so an
+ * appearance whose episode URL nobody has yet can still be listed, rather than
+ * being given a guessed link. See content/press.ts.
  */
-function StudioStill() {
+function PressEntry({ item }: { item: PressItem }) {
+  const body = (
+    <>
+      <span className="type-mono-ticker-sm uppercase" style={{ color: "var(--mm-text)" }}>
+        {item.outlet}
+      </span>
+      <span className="type-body-sm mt-1 block" style={{ color: "var(--mm-text-3)" }}>
+        {item.note}
+      </span>
+    </>
+  );
+
+  if (!item.href) {
+    return <div className="px-4 py-3">{body}</div>;
+  }
+
   return (
-    <div
-      className="relative mx-auto grid w-full place-items-center overflow-hidden rounded-[16px] border"
-      style={{
-        aspectRatio: "16 / 9",
-        // Capped so the still does not eat the whole panel on a short viewport —
-        // the hosts and press rows should be reachable without scrolling first.
-        // Constrains the WIDTH, not the height: capping height against a fixed
-        // aspect-ratio just stretches the box wider than 16:9.
-        maxWidth: "calc(42vh * 16 / 9)",
-        borderColor: "var(--mm-border)",
-        background:
-          "repeating-linear-gradient(45deg, var(--mm-surface) 0 12px, var(--mm-surface-raised) 12px 24px)",
-      }}
+    <a
+      href={item.href}
+      target="_blank"
+      rel="noreferrer noopener"
+      data-analytics="press_click"
+      data-analytics-press={item.id}
+      className="flex items-start justify-between gap-3 px-4 py-3 transition-colors duration-150 hover:bg-[var(--mm-surface)]"
     >
-      <p
-        className="type-mono-ticker-sm px-6 text-center uppercase"
+      <span>{body}</span>
+      {/* Decorative: the link's accessible name is already the outlet and the
+          note, and target="_blank" is announced by the UA. */}
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 16 16"
+        className="mt-[3px] size-3 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
         style={{ color: "var(--mm-text-3)" }}
       >
-        Studio still — 16:9 placeholder
-      </p>
+        <path d="M4 12 12 4M6 4h6v6" />
+      </svg>
+    </a>
+  );
+}
+
+/**
+ * The cover frame at the top of the panel. Source is 2736x1536 — 16:9 to within
+ * a rounding error.
+ *
+ * It used to be capped at `calc(42vh * 16/9)` and centred, which on a 1120px
+ * panel rendered it 672px wide and left 224px of empty panel down each side —
+ * 40% of the width doing nothing. That cap was written when this was a striped
+ * placeholder, to stop it swallowing a short viewport; the note it carried said
+ * height could not be capped because that "stretches the box wider than 16:9".
+ *
+ * With a real photograph in it, that stretch is the answer rather than the
+ * problem. The box now spans the full width and the ratio itself changes: 16:9
+ * on narrow screens where there is height to spare, and a 21:9 band from `md`
+ * up, where a full-height 16:9 would be 594px tall and push everything else off
+ * the first screen. `object-cover` turns the difference into a crop.
+ *
+ * The crop is biased upward — both hosts sit in the top half of the frame and
+ * the bottom is desk and microphone — so 21:9 takes the empty half and leaves
+ * two faces filling the width.
+ */
+function CoverStill() {
+  return (
+    <div
+      className="relative aspect-[16/9] w-full overflow-hidden rounded-[16px] border md:aspect-[21/9]"
+      style={{
+        borderColor: "var(--mm-border)",
+        background: "var(--mm-surface-raised)",
+      }}
+    >
+      <Image
+        src="/brand/keith-ben-cover.jpg"
+        alt="Keith D and Ben Leavitt on the Memes & Markets set"
+        fill
+        priority
+        // The panel is 1120px at most, less its 64px of padding.
+        sizes="(min-width: 1180px) 1056px, calc(100vw - 4rem)"
+        className="object-cover"
+        style={{ objectPosition: "center 32%" }}
+      />
     </div>
   );
 }

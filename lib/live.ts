@@ -74,7 +74,14 @@ export function inBroadcastWindow(at: Date = new Date()): boolean {
   return next.getTime() <= at.getTime();
 }
 
-/** "Tuesday 12PM ET" — the offline copy. */
+/**
+ * "Tuesday 12PM ET".
+ *
+ * Currently unused by any component: the player's offline countdown was removed
+ * when it became live-only. Kept, and kept tested, because the schedule maths it
+ * formats is the awkward part and the next thing that wants to print a slot
+ * should not have to rewrite it.
+ */
 export function formatSlot(slot: Date): string {
   const weekday = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York",

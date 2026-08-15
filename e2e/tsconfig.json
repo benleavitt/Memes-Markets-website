@@ -1,0 +1,14 @@
+{
+  // The root config excludes this folder, because the app build has no business
+  // compiling Playwright specs — but that also meant `npm run typecheck` never
+  // read them, so a renamed export or a wrong locator type surfaced only when the
+  // suite ran. A second project checks them without letting them into the build.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "incremental": false,
+    "types": ["node"]
+  },
+  "include": ["**/*.ts"],
+  "exclude": []
+}

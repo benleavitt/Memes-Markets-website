@@ -4,10 +4,8 @@ import { Globe } from "@/components/hero/Globe";
 import { OrbitCard } from "@/components/hero/OrbitCard";
 import { track } from "@/lib/analytics";
 import type { Episode } from "@/lib/episodes";
-import { ORBIT } from "@/lib/orbit";
 import { useCallback, useEffect, useRef } from "react";
 
-const STEP = 360 / ORBIT.COUNT;
 /** Pixels of drag per degree of rotation. Tuned so a full flick is about a third of a turn. */
 const DRAG_SENSITIVITY = 0.35;
 /** Page-scroll pixels per degree, while the hero is on screen. */
@@ -34,11 +32,25 @@ const MAX_VELOCITY = 8;
  * the press is left completely alone and the anchor behaves like any other link.
  */
 const DRAG_THRESHOLD = 5;
+/**
+ * Marks the belt while a drag-generated click is still pending.
+ *
+ * It exists because the swallow has TWO audiences and they cannot see each
+ * other's state. React's onClickCapture below stops the anchor navigating, but
+ * AnalyticsDelegate listens natively on `document`, so a swallowed click was
+ * still being recorded as an episode open — calling stopPropagation does not
+ * reach a listener bound on document, and which of the two runs first depends on
+ * registration order, which is not something to build on.
+ *
+ * An attribute on the element sidesteps the ordering entirely: whichever handler
+ * runs, it can ask the DOM. See the note on disarm() for when it clears.
+ */
+const SWALLOW_ATTR = "data-swallow-click";
 
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
 
 /**
- * The hero orbit. Twelve episode cards on one belt around an implied sphere.
+ * The hero orbit. Every episode on one belt around an implied sphere.
  *
  *                    far side (dim, behind the wordmark)
  *              ·  ·  ·  ·  ·  ·  ·  ·  ·  ·
@@ -48,13 +60,13 @@ const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n
  *              ▓  ▓  ▓  [θ=0]  ▓  ▓  ▓
  *                    near side (full opacity)
  *
- * The browser does the 3D. Each card is `rotateY(i·30deg) translateZ(R)` inside a
+ * The browser does the 3D. Each card is `rotateY(i·step) translateZ(R)` inside a
  * `preserve-3d` parent, so perspective, position and paint order all fall out of
  * the compositor — including back-to-front sorting, which we never compute.
  *
  * Rotating the whole belt is one number: `--spin`. Depth cues come from CSS
  * `cos()` reading that same variable, so there is no per-frame JavaScript walking
- * twelve elements. The only thing JS does per frame is write one custom property.
+ * the elements. The only thing JS does per frame is write one custom property.
  *
  * No `filter: blur()` on the far side (eng review D4). It is the most expensive
  * composite operation there is and the back cards sit near 10% opacity, where it
@@ -74,6 +86,17 @@ export function OrbitSphere({ episodes }: { episodes: Episode[] }) {
   const swallowClick = useRef(false);
   const target = useRef<number | null>(null);
   const frame = useRef<number | null>(null);
+
+  /**
+   * Degrees between cards, derived from what actually came back.
+   *
+   * It used to be `360 / ORBIT.COUNT` — a flat 12 — which is right whenever the
+   * feed and the fallback both hold at least twelve, and silently wrong the
+   * moment either does not: eight episodes would ride a belt spaced for twelve,
+   * leaving a third of it empty and arrow keys that step onto nothing.
+   */
+  const step = 360 / Math.max(episodes.length, 1);
+
   // Fired once per visit. Whether anyone touches the sphere at all is the
   // question; every individual drag frame is noise.
   const reported = useRef(false);
@@ -87,6 +110,29 @@ export function OrbitSphere({ episodes }: { episodes: Episode[] }) {
   // drift); --nudge is the user's offset on top of it. The belt adds them.
   const write = useCallback(() => {
     beltRef.current?.style.setProperty("--nudge", `${spin.current}deg`);
+  }, []);
+
+  const arm = useCallback(() => {
+    swallowClick.current = true;
+    beltRef.current?.setAttribute(SWALLOW_ATTR, "true");
+  }, []);
+
+  /**
+   * Cleared on the next deliberate INPUT — a press or a keystroke — rather than
+   * on the click it was armed for.
+   *
+   * Two bugs live in that choice. Clearing it on the click meant a gesture that
+   * produces no click never cleared it, and the flag was then spent on the next
+   * genuine one: drag past the threshold, then move vertically so `touch-action:
+   * pan-y` hands the gesture to the scroller and cancels the pointer, and the
+   * following tap on an episode did nothing. Clearing it inside onClickCapture
+   * would also race AnalyticsDelegate, which is the whole reason SWALLOW_ATTR
+   * exists. Waiting for the next input answers both, and covers the keyboard
+   * route too — Enter on a focused card fires keydown before click.
+   */
+  const disarm = useCallback(() => {
+    swallowClick.current = false;
+    beltRef.current?.removeAttribute(SWALLOW_ATTR);
   }, []);
 
   const stop = useCallback(() => {
@@ -113,14 +159,14 @@ export function OrbitSphere({ episodes }: { episodes: Episode[] }) {
         velocity.current *= FRICTION;
         if (Math.abs(velocity.current) < 0.05) {
           velocity.current = 0;
-          target.current = Math.round(spin.current / STEP) * STEP;
+          target.current = Math.round(spin.current / step) * step;
         }
       }
       write();
       frame.current = requestAnimationFrame(tick);
     };
     frame.current = requestAnimationFrame(tick);
-  }, [stop, write]);
+  }, [step, stop, write]);
 
   const reduced = useCallback(
     () =>
@@ -151,6 +197,7 @@ export function OrbitSphere({ episodes }: { episodes: Episode[] }) {
   // stopped the cards being clickable.
   const onPointerDown = (e: React.PointerEvent) => {
     stop();
+    disarm();
     pressing.current = true;
     dragging.current = false;
     velocity.current = 0;
@@ -179,50 +226,60 @@ export function OrbitSphere({ episodes }: { episodes: Episode[] }) {
 
     const dx = e.clientX - lastX.current;
     lastX.current = e.clientX;
-    const step = dx * DRAG_SENSITIVITY;
-    spin.current += step;
+    const delta = dx * DRAG_SENSITIVITY;
+    spin.current += delta;
     // Smoothed across moves, then clamped. Reading velocity straight off the last
     // delta makes the coast hostage to one frame's jitter.
     velocity.current = clamp(
-      velocity.current * 0.7 + step * 0.3,
+      velocity.current * 0.7 + delta * 0.3,
       -MAX_VELOCITY,
       MAX_VELOCITY,
     );
     write();
   };
 
-  const onPointerUp = () => {
+  const endPress = (coast: boolean) => {
     if (!pressing.current) return;
     pressing.current = false;
     if (!dragging.current) return; // a plain click: leave it entirely alone
 
     dragging.current = false;
     // Releasing a flick over a card must not also open that card, so the click
-    // that follows this pointerup gets swallowed once.
-    swallowClick.current = true;
+    // that follows gets swallowed — see disarm() for when the arming clears.
+    arm();
     beltRef.current?.removeAttribute("data-dragging");
-    if (reduced()) {
-      goTo(Math.round(spin.current / STEP) * STEP);
+    if (!coast || reduced()) {
+      goTo(Math.round(spin.current / step) * step);
       return;
     }
     run();
   };
 
+  const onPointerUp = () => endPress(true);
+  /**
+   * A cancelled pointer is a drag the browser took away — the page started
+   * scrolling, or the gesture was interrupted. Snap to the nearest card rather
+   * than coasting on a velocity the user never meant to hand over.
+   */
+  const onPointerCancel = () => endPress(false);
+
   // Capture phase, so it runs before the anchor's own default action.
   const onClickCapture = (e: React.MouseEvent) => {
     if (!swallowClick.current) return;
-    swallowClick.current = false;
     e.preventDefault();
     e.stopPropagation();
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
+    // Any keystroke counts as the next deliberate input, so Enter on a focused
+    // card is never eaten by a swallow left over from an earlier drag.
+    disarm();
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
     e.preventDefault();
     reportOnce("keyboard");
     const base = target.current ?? spin.current;
-    const snapped = Math.round(base / STEP) * STEP;
-    goTo(snapped + (e.key === "ArrowLeft" ? STEP : -STEP));
+    const snapped = Math.round(base / step) * step;
+    goTo(snapped + (e.key === "ArrowLeft" ? step : -step));
   };
 
   // Page scroll turns the belt while the hero is on screen. Passive, and it never
@@ -274,7 +331,7 @@ export function OrbitSphere({ episodes }: { episodes: Episode[] }) {
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
+        onPointerCancel={onPointerCancel}
         onClickCapture={onClickCapture}
         onKeyDown={onKeyDown}
       >
@@ -282,10 +339,10 @@ export function OrbitSphere({ episodes }: { episodes: Episode[] }) {
           <li
             key={episode.id}
             className="mm-orbit-slot"
-            style={{ "--a": `${i * STEP}deg` } as React.CSSProperties}
+            style={{ "--a": `${i * step}deg` } as React.CSSProperties}
             // Tabbing to a card that is round the back is disorienting, so bring
             // it to the front. Keyboard order then matches what is on screen.
-            onFocus={() => goTo(-i * STEP)}
+            onFocus={() => goTo(-i * step)}
           >
             <OrbitCard episode={episode} priority={i < 3} />
           </li>

@@ -1,33 +1,54 @@
 /**
- * Press slots for the More info panel.
+ * Press coverage and guest appearances, for the More info panel.
  *
- * Deliberately unbranded placeholders. Real mastheads here would assert "these
- * publications covered the show" — a claim the site cannot currently make, and
- * dropping a real newspaper's logo in before the coverage exists is a fabricated
- * credential rather than a design placeholder. See rule 4 in CLAUDE.md: the same
- * reason we never invent episode numbers.
+ * These are set as type, not mastheads. Dropping CBC's and CTV's logos in would
+ * assert "these broadcasters covered the show" — the coverage is real but it is
+ * about Ben personally, years before Memes & Markets existed, so the logo wall
+ * would be claiming something the entries themselves do not. Naming the outlet
+ * and saying plainly who appeared makes the same point without the overclaim.
+ * Same instinct as rule 4 in CLAUDE.md.
  *
- * To fill one in: replace `name`, drop an SVG into public/press/, set `logo`, and
- * point `href` at the actual piece.
+ * `href` is optional on purpose. Every current entry has one, but an entry
+ * without a link still prints — it just isn't clickable — so an appearance whose
+ * episode URL nobody has yet can go in the list rather than being guessed at.
  */
 
-export interface PressSlot {
+export interface PressItem {
   id: string;
-  /** Shown until a logo exists. */
-  name: string;
-  /** Path under public/press/. Renders instead of `name` once set. */
-  logo?: string;
-  /** The coverage itself. Without it the slot is not a link. */
+  /** The outlet, spelled the way it spells itself. */
+  outlet: string;
+  /** One line: who appeared, or what the piece was about. */
+  note: string;
+  /** The piece itself. Without it the entry is not a link. */
   href?: string;
 }
 
-export const PRESS_SLOTS: PressSlot[] = [
-  { id: "press-01", name: "Press slot 01" },
-  { id: "press-02", name: "Press slot 02" },
-  { id: "press-03", name: "Press slot 03" },
-  { id: "press-04", name: "Press slot 04" },
-  { id: "press-05", name: "Press slot 05" },
-  { id: "press-06", name: "Press slot 06" },
-  { id: "press-07", name: "Press slot 07" },
-  { id: "press-08", name: "Press slot 08" },
+/*
+ * Three guest appearances are missing from this list on purpose — Age of
+ * Abundance (Keith D & Ben), Ari Gutman (Keith D & Ben) and The Log Out Podcast
+ * (Keith D). They are real, but none of the three shows publishes an episode URL
+ * that names its guests, so there is nothing to point at. Add them here the
+ * moment someone has the links; nothing else needs to change.
+ */
+export const PRESS_ITEMS: PressItem[] = [
+  {
+    id: "ctv",
+    outlet: "CTV News",
+    note: "Ben on clearing student debt with YouTube",
+    href: "https://youtu.be/vjODgoQ93-g",
+  },
+  {
+    id: "cbc",
+    outlet: "CBC News",
+    note: "Guelph grad uses YouTube to pay off student loan",
+    href: "https://www.cbc.ca/news/canada/kitchener-waterloo/youtube-student-debt-loan-ben-leavitt-1.5412954",
+  },
+  {
+    id: "us-news",
+    outlet: "U.S. News & World Report",
+    note: "How students use TikTok and YouTube to pay for college",
+    // Syndicated copy — the link the hosts supplied, and the one that resolves.
+    // The piece is U.S. News' (Emma Kerr, Dec 2019), hence the outlet name.
+    href: "https://www.yahoo.com/news/students-grads-tiktok-youtube-pay-college-152013054.html",
+  },
 ];

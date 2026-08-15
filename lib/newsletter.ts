@@ -28,7 +28,19 @@ export const PUBLICATION =
 export const SUBSCRIBE_ENDPOINT = `${PUBLICATION}/api/v1/free`;
 
 export type SubscribeResult =
-  | { ok: true }
+  /**
+   * `requiresConfirmation` mirrors Substack's own `requires_confirmation`, and
+   * exists because this site spent its whole life telling people the opposite of
+   * the truth. A publication without double opt-in answers a signup with
+   * `{"didSignup":true,"requires_confirmation":false,...}` — the subscriber is
+   * live that instant and NO email is ever sent. Copy promising "check your
+   * inbox for a confirmation link" therefore describes an email that will never
+   * arrive, which reads exactly like a broken integration.
+   *
+   * Substack tells us which flow it used, so the copy follows the flag rather
+   * than a guess baked into a string.
+   */
+  | { ok: true; requiresConfirmation: boolean }
   /** `field` true means the address itself is the problem, so blame the input. */
   | { ok: false; message: string; field: boolean };
 
@@ -41,6 +53,23 @@ export type SubscribeResult =
  */
 export function looksLikeEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
+/**
+ * Strip anything email-shaped out of a string before it reaches a log.
+ *
+ * /api/subscribe is deliberate about never logging an address, but the one thing
+ * it does log is Substack's own `msg` — third-party text, whose contents are not
+ * this codebase's to promise anything about. The observed 400 bodies keep the
+ * address in a separate `value` field that `interpret` already drops, so nothing
+ * leaks today; this makes that true by construction instead of by observation.
+ *
+ * Deliberately looser than `looksLikeEmail`: that one decides whether to spend a
+ * round trip and should not reject valid addresses, this one decides what reaches
+ * a log and should over-match rather than miss one.
+ */
+export function redactAddresses(text: string): string {
+  return text.replace(/[^\s@<>()[\]",;:]+@[^\s@<>()[\]",;:]+/g, "[address]");
 }
 
 interface SubstackError {
@@ -67,7 +96,15 @@ export function interpret(status: number, body: unknown): SubscribeResult {
     };
   }
 
-  if (status >= 200 && status < 300) return { ok: true };
+  if (status >= 200 && status < 300) {
+    // Strictly `=== true`. A body that never mentions the field, or is not an
+    // object at all, means no confirmation step — which is the safer default:
+    // it tells the visitor they are subscribed rather than sending them looking
+    // for an email that is not coming.
+    const flag = (body as { requires_confirmation?: unknown } | null)
+      ?.requires_confirmation;
+    return { ok: true, requiresConfirmation: flag === true };
+  }
 
   // Reached Substack, but it is unhappy for a reason it did not spell out. Not
   // the visitor's fault, so do not point at the field.
@@ -78,11 +115,26 @@ export function interpret(status: number, body: unknown): SubscribeResult {
   };
 }
 
+/**
+ * Sent so the publication owner can tell this traffic apart from the embed's in
+ * Substack's logs, and so the request is not a UA-less POST from a datacentre —
+ * which is the shape most likely to be quietly rate-limited. Same reasoning as
+ * FEED_UA in lib/feed.ts.
+ */
+export const SUBSCRIBE_UA = "memesandmarkets.com signup form";
+
 /** POST an address to Substack. Server-side only — see the CORS note above. */
 export async function subscribe(email: string): Promise<SubscribeResult> {
   const res = await fetch(SUBSCRIBE_ENDPOINT, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      "user-agent": SUBSCRIBE_UA,
+      // The endpoint is the embed's. Sending where the embed would say it came
+      // from keeps the request consistent with first_url/current_url below.
+      referer: PUBLICATION,
+      origin: PUBLICATION,
+    },
     body: JSON.stringify({
       email,
       first_url: PUBLICATION,

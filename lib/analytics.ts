@@ -26,7 +26,9 @@ export type AnalyticsEvent =
   /** Did anyone touch the sphere, and how — drag, keyboard, or scroll. */
   | "orbit_interact"
   /** An episode opened from the orbit rather than the list below it. */
-  | "episode_open";
+  | "episode_open"
+  /** Which press piece or guest appearance in the info panel got opened. */
+  | "press_click";
 
 type Props = Record<string, string | number | boolean | undefined>;
 

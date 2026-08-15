@@ -4,21 +4,36 @@ import { LivePlayer } from "@/components/player/LivePlayer";
 import { POSITIONING, SCHEDULE } from "@/content/platforms";
 import { siteUrl } from "@/lib/site";
 import type { Metadata } from "next";
-import { Archivo, Geist_Mono } from "next/font/google";
+import { Archivo, Geist_Mono, Raleway } from "next/font/google";
 import "./globals.css";
 
 // Self-hosted by next/font at build time: no render-blocking request to Google,
 // and no layout shift, which matters because the wordmark's size is derived from
-// Archivo's metrics — a fallback face would not reach the page edges.
+// Raleway's metrics — a fallback face would not reach the page edges.
 const archivo = Archivo({
   subsets: ["latin"],
   weight: ["400", "600", "700", "800", "900"],
   variable: "--font-archivo",
   display: "swap",
 });
+// The wordmark, and nothing else. Raleway ships 100-900; 900 is the Heavy cut,
+// and it is the only weight anything asks for, so it is the only one downloaded.
+const raleway = Raleway({
+  subsets: ["latin"],
+  weight: ["900"],
+  variable: "--font-raleway",
+  display: "swap",
+});
+// 500 and 600, and nothing else: they are the only mono weights the site renders,
+// through .type-mono-ticker-sm and .type-mono-label. The generated type scale also
+// defines .type-mono-body (400), .type-mono-data-lg (700) and .type-mono-ticker
+// (500), but none of the three has a call site anywhere in the codebase, and
+// next/font preloads every weight it is handed — so declaring four meant two font
+// files fetched on every page to render nothing. Add a weight back the same day
+// something actually asks for it.
 const geistMono = Geist_Mono({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["500", "600"],
   variable: "--font-geist-mono",
   display: "swap",
 });
@@ -33,6 +48,15 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "Memes & Markets",
+    title: "Memes & Markets",
+    description: `${POSITIONING}. ${SCHEDULE}.`,
+  },
+  // Without this X falls back to a small square summary card, so the 1200x630
+  // art that app/opengraph-image.tsx renders never gets shown on the platform
+  // the show actually posts to. The image itself is picked up from the OG tags —
+  // this only tells X how to frame it.
+  twitter: {
+    card: "summary_large_image",
     title: "Memes & Markets",
     description: `${POSITIONING}. ${SCHEDULE}.`,
   },
@@ -51,7 +75,10 @@ export const metadata: Metadata = {
  */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${archivo.variable} ${geistMono.variable}`}>
+    <html
+      lang="en"
+      className={`${archivo.variable} ${raleway.variable} ${geistMono.variable}`}
+    >
       <body className="flex min-h-dvh flex-col">
         <div className="mm-backdrop" aria-hidden="true" />
         <a href="#main" className="mm-skip-link">

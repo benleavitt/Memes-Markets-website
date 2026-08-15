@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { ORBIT, nearestIndex, project, projectAll, spinToFront } from "./orbit";
 
@@ -93,5 +94,72 @@ describe("spinToFront / nearestIndex", () => {
   it("handles rotations beyond a full turn in both directions", () => {
     expect(nearestIndex(spinToFront(5) - Math.PI * 2)).toBe(5);
     expect(nearestIndex(spinToFront(5) + Math.PI * 4)).toBe(5);
+  });
+});
+
+/**
+ * The hero renders from CSS, not from this file.
+ *
+ * That is the arrangement — the belt is `rotateY() translateZ()` on the
+ * compositor, and the browser does the 3D — but it left this module claiming to
+ * be the single source of truth for numbers nothing at runtime reads. The site
+ * imports ORBIT.COUNT and nothing else; RADIUS, DEPTH and the rest lived here as
+ * documentation and again, independently, as literals in app/globals.css, kept in
+ * agreement by a comment in each pointing at the other.
+ *
+ * These tests are what makes the claim true. Change one side and the suite goes
+ * red, which is the whole difference between a source of truth and a copy.
+ */
+const CSS = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
+
+/** A declaration inside one rule, anchored so a `:has()` mention cannot match. */
+function declaration(selector: string, property: string): string {
+  const block = CSS.match(new RegExp(`^\\${selector}\\s*\\{([^}]*)\\}`, "m"))?.[1];
+  if (block === undefined) throw new Error(`no rule for ${selector} in globals.css`);
+  const value = block.match(new RegExp(`(?:^|;)\\s*${property}\\s*:([^;]*)`))?.[1];
+  if (value === undefined) {
+    throw new Error(`${selector} has no ${property} in globals.css`);
+  }
+  return value.trim();
+}
+
+/** A custom property, which must be declared exactly once to be a source of truth. */
+function customProperty(name: string): string {
+  const found = [...CSS.matchAll(new RegExp(`${name}\\s*:([^;]*)`, "g"))];
+  expect(found, `${name} should be declared once in globals.css`).toHaveLength(1);
+  return (found[0]?.[1] ?? "").trim();
+}
+
+describe("ORBIT matches the CSS the hero actually renders from", () => {
+  it("radius", () => {
+    expect(customProperty("--mm-orbit-r")).toBe(`${ORBIT.RADIUS}px`);
+  });
+
+  it("camera distance", () => {
+    expect(declaration(".mm-orbit-stage", "perspective")).toBe(`${ORBIT.DEPTH}px`);
+  });
+
+  it("card width", () => {
+    expect(declaration(".mm-orbit-slot", "width")).toBe(`${ORBIT.CARD_W}px`);
+    // The slot is centred on the belt, so its negative margin is half its width.
+    expect(declaration(".mm-orbit-slot", "margin-left")).toBe(`-${ORBIT.CARD_W / 2}px`);
+  });
+
+  it("vertical semi-axis follows the tilt the CSS applies", () => {
+    // RADIUS_Y is documented as RADIUS * sin(tilt). Read the tilt back out of the
+    // transform rather than trusting the comment.
+    const tilt = declaration(".mm-orbit-belt", "transform").match(
+      /rotateX\((-?[\d.]+)deg\)/,
+    )?.[1];
+    expect(tilt, "belt transform should carry a rotateX").toBeDefined();
+    const expected = ORBIT.RADIUS * Math.sin((Math.abs(Number(tilt)) * Math.PI) / 180);
+    expect(ORBIT.RADIUS_Y).toBeCloseTo(expected, 0);
+  });
+
+  it("leaves a gap between the front cards at this radius", () => {
+    // The reason RADIUS is 470 and not the 345 it started at. Below about 435 the
+    // circumference stops fitting COUNT cards and neighbours overlap on screen.
+    const circumference = 2 * Math.PI * ORBIT.RADIUS;
+    expect(circumference).toBeGreaterThan(ORBIT.COUNT * ORBIT.CARD_W);
   });
 });
