@@ -248,10 +248,31 @@
 }
 /* Pause only when a card is actually hovered, not anywhere over the stage — the
    belt spans the full hero, so pausing on stage hover would stop it the moment
-   the pointer entered the section. */
-.mm-orbit-belt:has(.mm-orbit-slot:hover),
+   the pointer entered the section.
+ *
+ * `data-pressing` is set on pointerdown, BEFORE the drag threshold is crossed,
+ * and it is what makes a card clickable in practice. Hover already froze the
+ * belt for a mouse, but hover does not exist on touch and does not apply while
+ * the pointer is between cards — so a finger aiming at a card was aiming at a
+ * moving target, slid a few pixels tracking it, and turned its own tap into a
+ * drag. Freezing on contact means the thing you pressed is still under you when
+ * you let go. */
+.mm-orbit-belt[data-pressing="true"],
 .mm-orbit-belt[data-dragging="true"] {
   animation-play-state: paused;
+}
+/* Hover-to-pause, for pointers that can actually hover.
+ *
+ * The guard is not tidiness. A touch browser leaves :hover stuck on whatever was
+ * tapped until something else is tapped, so unguarded this rule paused the belt
+ * permanently the first time a phone user touched a card — the orbit simply
+ * stopped, and nothing about tapping a card suggests that is what you asked for.
+ * Touch already gets its pause from data-pressing above, for the length of the
+ * press and no longer. */
+@media (hover: hover) {
+  .mm-orbit-belt:has(.mm-orbit-slot:hover) {
+    animation-play-state: paused;
+  }
 }
 
 .mm-orbit-slot {

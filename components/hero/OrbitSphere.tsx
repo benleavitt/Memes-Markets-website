@@ -30,8 +30,19 @@ const MAX_VELOCITY = 8;
  *
  * So capture is deferred until the pointer has actually moved this far. Below it
  * the press is left completely alone and the anchor behaves like any other link.
+ *
+ * IT WAS A FLAT 5px, AND THAT WAS TOO TIGHT TO CLICK. Crossing the threshold both
+ * turns the belt and swallows the click that follows, so 5px of travel produced
+ * the exact complaint: the orbit spins a little and the video never opens. Five
+ * pixels is inside the noise of an ordinary click — a trackpad, a shaky hand, or
+ * simply tracking a card that is drifting, which every card here always is.
+ *
+ * Touch gets more room because fingers are blunter than mice; the contact patch
+ * alone is wider than the old threshold. These are in the range browsers use for
+ * their own touch slop, rather than being invented here.
  */
-const DRAG_THRESHOLD = 5;
+const DRAG_THRESHOLD_FINE = 12;
+const DRAG_THRESHOLD_COARSE = 20;
 /**
  * Marks the belt while a drag-generated click is still pending.
  *
@@ -82,6 +93,8 @@ export function OrbitSphere({ episodes }: { episodes: Episode[] }) {
   const lastX = useRef(0);
   const startX = useRef(0);
   const startY = useRef(0);
+  /** Which threshold this press answers to. Set on pointerdown, read on move. */
+  const slop = useRef(DRAG_THRESHOLD_FINE);
   /** Set when a drag ends, so the click it generates does not open a card. */
   const swallowClick = useRef(false);
   const target = useRef<number | null>(null);
@@ -205,6 +218,11 @@ export function OrbitSphere({ episodes }: { episodes: Episode[] }) {
     lastX.current = e.clientX;
     startX.current = e.clientX;
     startY.current = e.clientY;
+    slop.current =
+      e.pointerType === "mouse" ? DRAG_THRESHOLD_FINE : DRAG_THRESHOLD_COARSE;
+    // Freezes the drift for the duration of the press, so whatever is under the
+    // pointer now is still under it on release. See the CSS note in globals.css.
+    beltRef.current?.setAttribute("data-pressing", "true");
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
@@ -215,7 +233,7 @@ export function OrbitSphere({ episodes }: { episodes: Episode[] }) {
         e.clientX - startX.current,
         e.clientY - startY.current,
       );
-      if (travelled < DRAG_THRESHOLD) return;
+      if (travelled < slop.current) return;
       // Now it is a drag. Capture from here so a fast flick that leaves the
       // element still completes rather than sticking half-rotated.
       dragging.current = true;
@@ -239,6 +257,9 @@ export function OrbitSphere({ episodes }: { episodes: Episode[] }) {
   };
 
   const endPress = (coast: boolean) => {
+    // Unconditional, and before the guard below: the drift must resume even if
+    // the press ended in a way this component did not start.
+    beltRef.current?.removeAttribute("data-pressing");
     if (!pressing.current) return;
     pressing.current = false;
     if (!dragging.current) return; // a plain click: leave it entirely alone

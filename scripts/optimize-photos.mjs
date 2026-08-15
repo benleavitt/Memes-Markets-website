@@ -27,6 +27,21 @@
 import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { chromium } from "@playwright/test";
 
+/**
+ * `crop` takes a rectangle out of the master before downscaling, in MASTER
+ * PIXELS. It exists because the two host photographs are not the same kind of
+ * picture: Ben's master is already a square head-and-shoulders, and Keith's is a
+ * full-length portrait where the face occupies about a fifth of the frame.
+ *
+ * Dropping the second into the same card left him small and low in it while Ben
+ * filled his, and no amount of `object-position` fixes that — `object-fit: cover`
+ * can only slide the window over the image, never tighten it. The zoom has to
+ * happen to the pixels, which is here.
+ *
+ * The numbers are tied to the specific master named above. Replace that file and
+ * they mean nothing, so re-derive them: they are a square, centred on the face,
+ * sized so the head fills about two thirds of it — which is what Ben's does.
+ */
 const JOBS = [
   {
     // The info panel cover. Panel caps at 1120px less 64px of padding.
@@ -39,8 +54,11 @@ const JOBS = [
     from: "../Assets/Kieth_D_profile_pic.JPG",
     to: "../public/brand/keith-d.jpg",
     width: 1160,
+    // Master is 2246x3387.
+    crop: { x: 636, y: 841, w: 1012, h: 1012 },
   },
   {
+    // No crop: this master is already framed the way the card wants it.
     from: "../Assets/Ben_profile_pic.jpg",
     to: "../public/brand/ben-leavitt.jpg",
     width: 1160,
@@ -71,29 +89,38 @@ for (const job of JOBS) {
   const dataUri = `data:image/jpeg;base64,${readFileSync(source).toString("base64")}`;
 
   const encoded = await page.evaluate(
-    async ({ dataUri, width, quality }) => {
+    async ({ dataUri, width, quality, crop }) => {
       const img = new Image();
       img.src = dataUri;
       await img.decode();
 
-      // Never upscale: a master smaller than the target is served as it is.
-      const scale = Math.min(1, width / img.naturalWidth);
+      // The source rectangle: the whole master unless a crop asked otherwise.
+      // Clamped to the image so a stale rectangle produces a wrong-looking
+      // picture rather than a silently blank one.
+      const sx = crop ? Math.max(0, Math.min(crop.x, img.naturalWidth - 1)) : 0;
+      const sy = crop ? Math.max(0, Math.min(crop.y, img.naturalHeight - 1)) : 0;
+      const sw = crop ? Math.min(crop.w, img.naturalWidth - sx) : img.naturalWidth;
+      const sh = crop ? Math.min(crop.h, img.naturalHeight - sy) : img.naturalHeight;
+
+      // Never upscale: a source smaller than the target is served as it is.
+      const scale = Math.min(1, width / sw);
       const canvas = document.createElement("canvas");
-      canvas.width = Math.round(img.naturalWidth * scale);
-      canvas.height = Math.round(img.naturalHeight * scale);
+      canvas.width = Math.round(sw * scale);
+      canvas.height = Math.round(sh * scale);
 
       const ctx = canvas.getContext("2d");
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
 
       return {
         uri: canvas.toDataURL("image/jpeg", quality),
         w: canvas.width,
         h: canvas.height,
+        source: `${img.naturalWidth}x${img.naturalHeight}`,
       };
     },
-    { dataUri, width: job.width, quality: QUALITY },
+    { dataUri, width: job.width, quality: QUALITY, crop: job.crop ?? null },
   );
 
   const bytes = Buffer.from(encoded.uri.split(",")[1], "base64");
@@ -101,7 +128,7 @@ for (const job of JOBS) {
 
   const saved = Math.round((1 - bytes.length / before) * 100);
   console.log(
-    `${job.to.replace("../", "")}  ${encoded.w}x${encoded.h}  ${kb(before)} -> ${kb(bytes.length)}  (-${saved}%)`,
+    `${job.to.replace("../", "")}  ${encoded.source}${job.crop ? " cropped" : ""} -> ${encoded.w}x${encoded.h}  ${kb(before)} -> ${kb(bytes.length)}  (-${saved}%)`,
   );
 }
 
