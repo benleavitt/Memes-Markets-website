@@ -15,6 +15,7 @@
     "test:watch": "vitest",
     "e2e": "playwright test",
     "globe": "node scripts/generate-globe.mjs",
+    "favicon": "node scripts/generate-favicon.mjs",
     "episodes:refresh": "node scripts/refresh-episodes.mjs",
     "episodes:check": "node scripts/refresh-episodes.mjs --check"
   },
