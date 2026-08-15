@@ -2,20 +2,29 @@
  * Full-bleed wordmark. There is no nav bar — this IS the header.
  *
  * Sized with pure CSS, no JS measurement and therefore no layout shift.
- * "MEMES & MARKETS" set in Archivo Black at -5% tracking has a fixed
+ * "MEMES & MARKETS" set in Raleway Heavy at -5% tracking has a fixed
  * width-to-font-size ratio, so the font size that exactly fills the container is
  * just `containerWidth / ratio`.
  *
- *   ratio = 2241px wide / 220px font-size = 10.186
+ *   ratio = 8692px wide / 1000px font-size = 8.692
  *
- * Measured in Figma (file qUhg8iR0L0TAOqv3QQ7pAM, style `display/wordmark`).
+ * Measured in the browser against the loaded Raleway 900 face, using the exact
+ * CSS below. It replaced 10.186, which was Archivo Black's. Raleway Heavy is the
+ * narrower face per em, so the same container now resolves to a LARGER font-size
+ * — 121px where Archivo got 103px on a 1280px viewport. The mark spans the same
+ * width it always did; it is the cap height, and so the hero's height, that grew.
+ * That is the trade the family change makes, and FILL below is the dial to
+ * unwind it with if the hero starts crowding the fold.
+ *
  * If the string, the family, or the tracking changes, re-measure — nothing else
- * in the layout will tell you it drifted, the text will just stop reaching the edge.
+ * in the layout will tell you it drifted, the text will just stop reaching the
+ * edge. To re-measure: render the string at a known font-size with this exact
+ * CSS and divide the resulting width by that font-size.
  *
  * `cqw` rather than `vw` because vw includes the scrollbar, which would push the
  * text a few px wider than the page and cause a horizontal scroll.
  */
-const RATIO = 10.186;
+const RATIO = 8.692;
 /**
  * Fraction of the container the wordmark spans.
  *
@@ -38,9 +47,8 @@ export function Wordmark({ as: Tag = "h1" }: { as?: "h1" | "p" }) {
       style={{ paddingInline: "var(--mm-space-5)" }}
     >
       <Tag
-        className="text-[var(--mm-text)] uppercase"
+        className="mm-wordmark text-[var(--mm-text)] uppercase"
         style={{
-          fontFamily: "var(--mm-font-display)",
           fontWeight: 900,
           // minus the two paddings, so FILL is measured against the usable width
           fontSize: `calc((100cqw - 2 * var(--mm-space-5)) / ${RATIO} * ${FILL})`,

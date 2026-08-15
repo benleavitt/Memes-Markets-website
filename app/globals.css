@@ -7,6 +7,33 @@
 :root {
   --mm-font-display: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
   --mm-font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+  /* The wordmark, in Raleway Heavy. Not a Figma variable — the generated token
+     file knows nothing about it — so it is declared here beside the other
+     bindings rather than hand-edited into styles/tokens.css.
+     Archivo is the fallback because it is the closest thing already loaded, but
+     the two are not metrically compatible: the hero's RATIO is measured against
+     Raleway, so a fall back leaves the mark short of the page edges. */
+  --mm-font-hero: var(--font-raleway), var(--font-archivo), ui-sans-serif, system-ui,
+    sans-serif;
+}
+
+/*
+ * The wordmark, wherever "Memes & Markets" is set as the brand mark rather than
+ * as running text: the hero, the footer lockup, the info panel's footer row and
+ * the About title. Raleway Heavy is the brand face, so this is one class instead
+ * of the same font-family repeated at four call sites.
+ *
+ * Deliberately NOT applied to the two places the name appears in the monospace
+ * register — the info panel's sticky header and the footer copyright line. Those
+ * are set as system labels alongside "HOSTED BY" and "FREE. UNSUBSCRIBE ANY
+ * TIME.", and pulling only the ones containing the brand name into Raleway would
+ * leave the mono labels inconsistent with each other.
+ *
+ * Weight is not set here. The hero wants 900 and the footer lockup already asks
+ * for its own; a blanket weight would flatten that.
+ */
+.mm-wordmark {
+  font-family: var(--mm-font-hero);
 }
 
 @layer base {

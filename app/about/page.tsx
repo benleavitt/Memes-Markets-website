@@ -28,7 +28,7 @@ export default function About() {
         <p className="type-mono-label" style={{ color: "var(--mm-accent)" }}>
           About
         </p>
-        <h1 className="type-display-lg mt-4 max-w-[18ch] text-balance">
+        <h1 className="type-display-lg mm-wordmark mt-4 max-w-[18ch] text-balance">
           Memes &amp; Markets
         </h1>
         <p
