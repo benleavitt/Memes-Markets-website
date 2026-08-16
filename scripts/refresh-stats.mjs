@@ -15,14 +15,18 @@
  * subscribers the channel does not have — but it is still wrong, and it is wrong
  * on the figures a sponsor reads.
  *
- * Imports lib/stats.ts rather than parsing the response here, for the same
+ * Imports lib/channel.ts rather than parsing the response here, for the same
  * reason refresh-episodes.mjs imports lib/feed.ts: a script with its own parser
  * proves some parser can read the API, which is not the question. Node strips
  * the TypeScript natively (>= 22.6).
+ *
+ * channel.ts and NOT stats.ts. stats.ts imports the fallback JSON, and a JSON
+ * import without an import attribute cannot be loaded by plain Node — importing
+ * it here fails with ERR_IMPORT_ATTRIBUTE_MISSING before a line of this runs.
  */
 import { readFileSync, writeFileSync } from "node:fs";
+import { parseStats, statsUrl } from "../lib/channel.ts";
 import { CHANNEL_ID } from "../lib/feed.ts";
-import { parseStats } from "../lib/stats.ts";
 
 const OUT = new URL("../content/channel-stats-fallback.json", import.meta.url);
 const checkOnly = process.argv.includes("--check");
@@ -38,11 +42,11 @@ if (!KEY) {
 }
 
 if (KEY) {
-  const url = `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${CHANNEL_ID}&key=${KEY}`;
-
   let res;
   try {
-    res = await fetch(url);
+    // Same URL builder the site uses, so a change to the endpoint cannot leave
+    // the script checking something the page does not read.
+    res = await fetch(statsUrl(CHANNEL_ID, KEY));
   } catch (err) {
     console.error(`could not reach the YouTube API: ${err.message}`);
     process.exitCode = 1;

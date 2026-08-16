@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compact, parseStats } from "./stats";
+import { compact, parseStats } from "./channel";
 
 /**
  * The shape below is verbatim from `channels?part=statistics`. It is worth
