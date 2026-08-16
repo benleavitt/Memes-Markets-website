@@ -19,7 +19,14 @@ export function Footer() {
     <footer className="mt-auto border-t" style={{ borderColor: "var(--mm-border)" }}>
       <div className="mx-auto flex max-w-[1200px] flex-col gap-10 px-6 pt-16 pb-14">
         <div className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-4">
+          {/* The lockup goes home as well as the header one. It is the other
+              place people click by reflex, and on a long page it is the closer
+              of the two by the time anyone is looking for it. */}
+          <Link
+            href="/"
+            aria-label="Memes & Markets — back to the homepage"
+            className="group flex items-center gap-4 no-underline"
+          >
             {/* The master in Assets/ is a 4267px square that is mostly transparent
                 padding — at 44px the mark rendered ~19px wide and read as missing.
                 public/brand/mm-logo.png is cropped to the ink bounds, hence 522x640. */}
@@ -32,7 +39,7 @@ export function Footer() {
             />
             <div>
               <p
-                className="mm-wordmark uppercase"
+                className="mm-wordmark uppercase underline decoration-transparent underline-offset-[6px] transition-colors duration-150 group-hover:decoration-[var(--mm-accent)]"
                 style={{
                   fontWeight: 900,
                   fontSize: "22px",
@@ -46,20 +53,60 @@ export function Footer() {
                 {HOSTS} · {SCHEDULE}
               </p>
             </div>
-          </div>
+          </Link>
 
-          <nav aria-label="Site" className="flex flex-wrap items-center gap-x-8 gap-y-3">
-            <Link className="type-label-lg uppercase hover:underline" href="/about">
-              About
-            </Link>
-            <Link className="type-label-lg uppercase hover:underline" href="/partner">
-              Partner
-            </Link>
+          {/* These were bare uppercase text with an underline that only appeared
+              on hover, which is no affordance at all: on a page whose every
+              heading is also bare uppercase text, "About" and "Partner" read as
+              labels rather than as the only two other pages on the site. Nobody
+              hovers something they have not already guessed is a link.
+              They are now bordered like the platform buttons above them, which
+              is this design's existing vocabulary for "this is a control". */}
+          {/* A column, not a wrapping row. Three items in a squeezed middle
+              column meant the handle broke to its own line anyway, but as an
+              overflow rather than a decision — indented under the buttons and
+              running past their right edge. Stacking it says the same thing
+              deliberately: two pages, then where to follow the show. */}
+          <nav aria-label="Site" className="flex flex-col items-start gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              {[
+                { href: "/about", label: "About" },
+                { href: "/partner", label: "Partner" },
+              ].map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="type-label-lg group inline-flex items-center gap-2 rounded-[10px] border px-4 py-2.5 uppercase no-underline transition-colors duration-150 hover:border-[var(--mm-accent)] hover:bg-[var(--mm-surface-raised)]"
+                  style={{
+                    background: "var(--mm-surface)",
+                    borderColor: "var(--mm-border)",
+                    color: "var(--mm-text)",
+                  }}
+                >
+                  {item.label}
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 16 16"
+                    className="size-3 shrink-0 transition-colors duration-150 group-hover:text-[var(--mm-accent)]"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ color: "var(--mm-text-3)" }}
+                  >
+                    <path d="M3 8h10M9 4l4 4-4 4" />
+                  </svg>
+                </Link>
+              ))}
+            </div>
+
             {/* The one place the show's handle is printed rather than drawn as
                 an icon, so it is the show's own — not the clips channel, which
-                used to sit here and read like the main account. */}
+                used to sit here and read like the main account. Left as text: it
+                is a handle, and a handle in a button reads as a third page. */}
             <a
-              className="type-label-lg uppercase hover:underline"
+              className="type-label-lg uppercase underline decoration-[var(--mm-border-strong)] underline-offset-4 transition-colors duration-150 hover:decoration-[var(--mm-accent)]"
               style={{ color: "var(--mm-text-2)" }}
               href={SHOW_CHANNEL.href}
               target="_blank"
@@ -69,7 +116,11 @@ export function Footer() {
             </a>
           </nav>
 
-          <ul className="flex flex-wrap items-center gap-2">
+          {/* shrink-0 and no wrap: seven buttons that break to 6 + 1 read as a
+              mistake rather than a row. The nav beside it wraps instead, which
+              costs nothing because it is text. Below `md` the whole footer row
+              is a column and each of these gets the full width anyway. */}
+          <ul className="flex shrink-0 flex-wrap items-center gap-2 md:flex-nowrap">
             {PLATFORMS.map((p) => (
               <li key={p.id}>
                 <a
