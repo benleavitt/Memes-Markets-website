@@ -1,3 +1,5 @@
+import { SCHEDULE_HOUR_ET } from "@/lib/live";
+
 /** Where you can find the show. Order is the order they appear in the platform bar. */
 
 export type PlatformId =
@@ -66,7 +68,19 @@ export const PLATFORMS: Platform[] = [
 ];
 
 export const HOSTS = "Keith D & Ben Leavitt";
-export const SCHEDULE = "Live Tuesdays & Thursdays";
+/**
+ * Printed on /partner as the fallback route when the form is unavailable, so it
+ * is a PUBLIC address and will be scraped. Swapping it for a dedicated one
+ * (partners@ on the domain, say) is a change to this line only.
+ */
+export const CONTACT_EMAIL = "memesmarketsteam@gmail.com";
+/**
+ * The hour comes from lib/live.ts rather than being typed again here. That file
+ * already owns the schedule — it is what computes the next slot and decides how
+ * long a live-status answer may be cached — so a second copy of "12" is a second
+ * thing to remember when the show moves.
+ */
+export const SCHEDULE = `Live Tuesdays & Thursdays ${SCHEDULE_HOUR_ET}PM ET`;
 export const POSITIONING = "Where culture, tech & financial markets intersect";
 
 /** Required verbatim in every footer. */
