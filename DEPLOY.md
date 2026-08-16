@@ -38,6 +38,45 @@ fine to deploy first and add them afterwards.
 | `TWITCH_USER_LOGIN` | Production, Preview | Defaults to `memesandmarkets`. |
 | `FORCE_LIVE` | Preview only | Forces the player live for demos. Never set this in Production. |
 | `SUBSTACK_PUBLICATION_URL` | Production, Preview | Only if the newsletter moves off its current custom domain. |
+| `YOUTUBE_API_KEY` | Production, Preview | The audience numbers on the landing page. **Without it they never change** — see below. |
+| `PARTNER_SHEET_WEBHOOK` | Production, Preview | Apps Script `/exec` URL for partnership enquiries. Without it `/api/partner` answers 503 and points people at email. |
+| `PARTNER_SHEET_SECRET` | Production, Preview | Must match `SHARED_SECRET` in the Apps Script. |
+
+## The audience numbers
+
+`lib/stats.ts` reads `channels?part=statistics` from the YouTube Data API on the
+same hourly ISR window as the episodes, and falls back to
+`content/channel-stats-fallback.json` when it cannot.
+
+**The fallback is not a rainy-day file — without a key it is the only source**,
+so the band shows real but frozen figures until somebody re-commits it. Two
+things keep it honest:
+
+- `YOUTUBE_API_KEY` in Vercel makes the live site update hourly.
+- The same key as a **GitHub Actions secret** makes `refresh-episodes.yml`
+  re-commit the fallback twice a day, so a fresh clone and any deploy without the
+  key are still close to the truth.
+
+The key is free and read-only: console.cloud.google.com → enable *YouTube Data
+API v3* → Credentials → Create credentials → API key. One call costs 1 unit
+against a 10,000/day quota; hourly ISR spends 24.
+
+That step is `continue-on-error` on purpose. The scheduled job's red light means
+one thing — the site's parser can no longer read the feed — and a missing stats
+key must never be able to trigger it.
+
+## Partnership enquiries
+
+`scripts/partner-sheet.gs` carries the Apps Script and its setup, in the repo so
+the thing receiving enquiries is version-controlled next to the form that sends
+them. Roughly: create a sheet, paste the script, set `SHARED_SECRET`, deploy as
+a web app that "Anyone" can reach, then put the `/exec` URL and the same secret
+into the two variables above.
+
+"Anyone" is required — Vercel's servers post without a Google login — which is
+exactly why the secret exists. Editing the script later creates a *new* `/exec`
+URL unless you edit the existing deployment under **Manage deployments**; if
+enquiries stop arriving after a change, check that first.
 
 ## Adding the domain later
 

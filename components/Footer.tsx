@@ -52,6 +52,9 @@ export function Footer() {
             <Link className="type-label-lg uppercase hover:underline" href="/about">
               About
             </Link>
+            <Link className="type-label-lg uppercase hover:underline" href="/partner">
+              Partner
+            </Link>
             {/* The one place the show's handle is printed rather than drawn as
                 an icon, so it is the show's own — not the clips channel, which
                 used to sit here and read like the main account. */}
