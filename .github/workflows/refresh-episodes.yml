@@ -53,17 +53,36 @@ jobs:
         id: refresh
         run: node scripts/refresh-episodes.mjs
 
+      # The audience numbers on the landing page.
+      #
+      # `continue-on-error` is the important part, and it is not laziness. This
+      # job's red light means ONE thing — the site's parser can no longer read
+      # the feed — and that signal is worth more than anything below. A missing
+      # YOUTUBE_API_KEY is a configuration state, not a fault, and a quota blip
+      # is not a broken feed; letting either turn the run red would train
+      # everybody to ignore the email that matters.
+      #
+      # The page never breaks when this is skipped: lib/stats.ts falls back to
+      # the committed file. It just stops getting fresher.
+      - name: Refresh channel stats
+        id: stats
+        continue-on-error: true
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: node scripts/refresh-stats.mjs
+
       # Runs the site's unit tests against the newly written data, so a feed that
       # parses but produces nonsense cannot be committed unnoticed.
       - name: Test
-        if: steps.refresh.outputs.changed == 'true'
+        if: steps.refresh.outputs.changed == 'true' || steps.stats.outputs.stats_changed == 'true'
         run: npm test
 
       - name: Commit
-        if: steps.refresh.outputs.changed == 'true'
+        if: steps.refresh.outputs.changed == 'true' || steps.stats.outputs.stats_changed == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add content/episodes-fallback.json
-          git commit -m "chore: refresh episode fallback from the feed"
+          # -- so a path that did not change is not an error.
+          git add -- content/episodes-fallback.json content/channel-stats-fallback.json
+          git commit -m "chore: refresh episode and channel-stat fallbacks"
           git push
