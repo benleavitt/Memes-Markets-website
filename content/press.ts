@@ -24,13 +24,18 @@ export interface PressItem {
 }
 
 /*
- * Three guest appearances are missing from this list on purpose — Age of
- * Abundance (Keith D & Ben), Ari Gutman (Keith D & Ben) and The Log Out Podcast
- * (Keith D). They are real, but none of the three shows publishes an episode URL
- * that names its guests, so there is nothing to point at. Add them here the
- * moment someone has the links; nothing else needs to change.
+ * Two guest appearances are still missing on purpose — Age of Abundance and Ari
+ * Gutman, both Keith D & Ben. They are real, but neither show publishes an
+ * episode URL that names its guests, so there is nothing to point at. Add them
+ * the moment someone has the links; nothing else needs to change.
  */
 export const PRESS_ITEMS: PressItem[] = [
+  {
+    id: "log-out",
+    outlet: "The Log Out Podcast",
+    note: "Keith D on how the betting economy targets young men",
+    href: "https://www.youtube.com/watch?v=jDT7SMMSMJs",
+  },
   {
     id: "ctv",
     outlet: "CTV News",

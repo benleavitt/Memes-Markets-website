@@ -360,3 +360,73 @@ test.describe("home", () => {
     expect(overflows).toBe(false);
   });
 });
+
+/**
+ * Getting back out of a subpage.
+ *
+ * This site has no nav bar by design — the wordmark is the header — and the
+ * consequence went unnoticed until someone tried to use it: /about and /partner
+ * had no route home at all except the footer, past the entire page. Somebody
+ * arriving from a pasted link was stuck.
+ *
+ * Each of these is a separate way home, and they are tested separately because
+ * each is one someone will reach for by reflex.
+ */
+test.describe("navigation", () => {
+  for (const from of ["/about", "/partner"]) {
+    test(`the header lockup on ${from} goes home`, async ({ page }) => {
+      await page.goto(from);
+      await page
+        .getByRole("link", { name: /back to the homepage/i })
+        .first()
+        .click();
+      await expect(page).toHaveURL(/localhost:3000\/$/);
+    });
+
+    test(`the footer lockup on ${from} goes home`, async ({ page }) => {
+      await page.goto(from);
+      await page
+        .locator("footer")
+        .getByRole("link", { name: /back to the homepage/i })
+        .click();
+      await expect(page).toHaveURL(/localhost:3000\/$/);
+    });
+  }
+
+  test("the footer reaches both subpages", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("link", { name: "About", exact: true }).click();
+    await expect(page).toHaveURL(/\/about$/);
+
+    await page.getByRole("link", { name: "Partner", exact: true }).click();
+    await expect(page).toHaveURL(/\/partner$/);
+  });
+
+  /**
+   * The homepage must NOT grow the small header. Its wordmark is already the
+   * header at full bleed, and a second smaller one directly above it reads as a
+   * rendering fault rather than as navigation.
+   */
+  test("the homepage does not carry the subpage header", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("body > header")).toHaveCount(0);
+    await expect(page.locator("body > main")).toHaveCount(1);
+  });
+
+  /**
+   * The developer credit. Pinned because the value of it is entirely in the
+   * fragment: without `#contact` it lands someone at the top of a portfolio to
+   * scroll and hunt, which is how an interested click gets lost. A tidy-up that
+   * "simplified" the href would break exactly the thing it is for, and would
+   * look like no change at all.
+   */
+  test("the footer credits the developer and links their contact section", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const credit = page.locator("footer").getByRole("link", { name: /site by/i });
+    await expect(credit).toBeVisible();
+    await expect(credit).toHaveAttribute("href", /ochanda-charles\.me\/#contact$/);
+    await expect(credit).toHaveAttribute("target", "_blank");
+  });
+});
