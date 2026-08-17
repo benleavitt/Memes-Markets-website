@@ -176,7 +176,25 @@ export function Footer() {
             {DISCLAIMER}
           </p>
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            {/* Text links rather than buttons, unlike About and Partner above.
+                These are the pages somebody goes looking for deliberately —
+                giving them the same weight as the two pages the site wants read
+                would say something untrue about what matters here. */}
+            {[
+              { href: "/privacy", label: "Privacy" },
+              { href: "/terms", label: "Terms" },
+            ].map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="type-mono-ticker-sm uppercase underline decoration-[var(--mm-border-strong)] underline-offset-4 transition-colors duration-150 hover:text-[var(--mm-text-2)] hover:decoration-[var(--mm-accent)]"
+                style={{ color: "var(--mm-text-3)" }}
+              >
+                {item.label}
+              </Link>
+            ))}
+
             {/* The developer credit. Underlined at rest rather than on hover —
                 the whole point of it is that somebody who is not looking for it
                 notices it is a link, which is the same argument as the nav

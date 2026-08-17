@@ -1,4 +1,6 @@
+import { Analytics } from "@/components/Analytics";
 import { AnalyticsDelegate } from "@/components/AnalyticsDelegate";
+import { ConsentBanner } from "@/components/ConsentBanner";
 import { Footer } from "@/components/Footer";
 import { LivePlayer } from "@/components/player/LivePlayer";
 import { POSITIONING, SCHEDULE } from "@/content/platforms";
@@ -60,6 +62,17 @@ export const metadata: Metadata = {
     title: "Memes & Markets",
     description: `${POSITIONING}. ${SCHEDULE}.`,
   },
+  /**
+   * Google Search Console's meta-tag verification, when a token is configured.
+   *
+   * Next drops the tag entirely when the value is undefined, so an unconfigured
+   * site ships no empty verification tag. The DNS TXT route is the alternative
+   * and needs nothing here — it also survives a change of host, which this does
+   * not, so it is the better option if the domain is under your control.
+   */
+  verification: {
+    google: process.env.NEXT_PUBLIC_GSC_VERIFICATION || undefined,
+  },
 };
 
 /**
@@ -71,6 +84,8 @@ export const metadata: Metadata = {
  *     <Footer/>       every page, so the disclaimer cannot go missing
  *     <LivePlayer/>   Phase 3 — mounts OUTSIDE {children} so navigating
  *                     Home <-> About never unmounts the stream
+ *     <ConsentBanner/> only while the cookie choice is undecided
+ *     <Analytics/>    GA4, and nothing at all without a measurement id
  *   </body>
  */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -88,6 +103,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Footer />
         <LivePlayer />
         <AnalyticsDelegate />
+        <ConsentBanner />
+        <Analytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
       </body>
     </html>
   );
