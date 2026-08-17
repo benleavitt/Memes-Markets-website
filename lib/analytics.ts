@@ -1,19 +1,18 @@
 /**
  * Event tracking, provider-agnostic.
  *
- * No provider is wired yet, and that is deliberate: picking one is a product and
- * privacy decision, not an engineering one. What this file does is put the call
- * sites in the right places now, so choosing Plausible, Vercel Analytics or
- * anything else later is a change to ONE function rather than a hunt through
- * every component.
+ * The provider is now Google Analytics 4, and the indirection this file was
+ * built for paid off exactly as intended: wiring it was a change to the one
+ * function below, not a hunt through every component that calls it.
  *
- * To wire Plausible:
- *   window.plausible?.(event, { props });
- * To wire Vercel Analytics:
- *   import { track as va } from "@vercel/analytics"; va(event, props);
+ * CONSENT IS NOT CHECKED HERE, and that is deliberate rather than an oversight.
+ * Google's Consent Mode owns that decision — components/Analytics.tsx defaults
+ * analytics_storage to denied, and the banner flips it. Adding a second gate
+ * here would mean two sources of truth for the same question, and the one in
+ * this file would be the one that quietly went stale.
  *
- * Until then it is a no-op in production and a console line in development, so
- * you can confirm the events fire before paying for somewhere to send them.
+ * Every send is still conditional on gtag EXISTING, which it does not without
+ * NEXT_PUBLIC_GA_ID. A site with no measurement id sends nothing from here.
  */
 
 export type AnalyticsEvent =
@@ -36,10 +35,11 @@ export function track(event: AnalyticsEvent, props?: Props): void {
   if (typeof window === "undefined") return;
 
   if (process.env.NODE_ENV === "development") {
-    // Visible on purpose: the point of this branch is to prove events fire.
+    // Visible on purpose: the point of this branch is to prove events fire,
+    // without a dev session polluting the real property's numbers.
     console.debug("[analytics]", event, props ?? {});
     return;
   }
 
-  // Wire a provider here. Intentionally empty rather than pretending to send.
+  window.gtag?.("event", event, props ?? {});
 }

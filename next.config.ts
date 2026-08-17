@@ -26,23 +26,48 @@ const isDev = process.env.NODE_ENV !== "production";
  * JSON-LD in lib/schema.tsx, which already escapes `<`) is the wrong way round.
  *
  * The directives that do the work here are the other ones: `frame-src` pins
- * embedding to Twitch, `connect-src 'self'` means nothing on the page can phone
- * anywhere else, and `form-action 'self'` stops the newsletter form being
- * repointed. Revisit the nonce the day an analytics provider is wired.
+ * embedding to Twitch, `connect-src` allows this origin and Google Analytics and
+ * nothing else, and `form-action 'self'` stops the newsletter form being
+ * repointed.
+ *
+ * The nonce question was left open "the day an analytics provider is wired", and
+ * that day has come — but the answer has not changed. gtag.js is loaded from a
+ * host, not inlined, so it needs no nonce; only our own two bootstrap lines are
+ * inline, and they are the same self-authored scripts the trade was already
+ * about. Revisit if a tag manager ever starts injecting third-party inline code,
+ * which is the case 'unsafe-inline' would actually be dangerous for.
  */
+/**
+ * Google Analytics' hosts, listed once and used across three directives.
+ *
+ * They are separate hosts doing separate jobs, which is why one entry is not
+ * enough: googletagmanager serves gtag.js AND receives some collection traffic,
+ * google-analytics.com takes the measurement hits, and the regional endpoints
+ * (region1.google-analytics.com and friends) take them for EU visitors. Miss any
+ * one and analytics fails in a way that only shows up for some of the audience,
+ * with a console error nobody is watching for.
+ */
+const GA_HOSTS = [
+  "https://www.googletagmanager.com",
+  "https://*.googletagmanager.com",
+  "https://*.google-analytics.com",
+  "https://*.analytics.google.com",
+];
+
 const csp = [
   "default-src 'self'",
   // 'unsafe-eval' is HMR's, and only in dev.
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+  `script-src 'self' 'unsafe-inline' ${GA_HOSTS[0]}${isDev ? " 'unsafe-eval'" : ""}`,
   // React writes inline style attributes throughout; Tailwind ships as a file.
   "style-src 'self' 'unsafe-inline'",
   // next/image serves optimised thumbnails from this origin; i.ytimg.com is the
-  // unoptimised fallback path, and data:/blob: cover the OG renderer.
-  "img-src 'self' data: blob: https://i.ytimg.com",
+  // unoptimised fallback path, and data:/blob: cover the OG renderer. GA's hosts
+  // are here because a measurement hit can fall back to a 1x1 image beacon.
+  `img-src 'self' data: blob: https://i.ytimg.com ${GA_HOSTS.join(" ")}`,
   "font-src 'self'",
   // The Twitch player's own requests happen inside the iframe, under its own
   // origin, so they are not governed by this.
-  `connect-src 'self'${isDev ? " ws: wss:" : ""}`,
+  `connect-src 'self' ${GA_HOSTS.join(" ")}${isDev ? " ws: wss:" : ""}`,
   "frame-src https://player.twitch.tv https://*.twitch.tv",
   "worker-src 'self' blob:",
   "object-src 'none'",

@@ -39,8 +39,7 @@ export default function About() {
             className="type-body-lg mt-6 max-w-[62ch]"
             style={{ color: "var(--mm-text-2)" }}
           >
-            {POSITIONING}. {SCHEDULE}, live and unedited, hosted by {HOSTS}. Ninety-odd
-            episodes in and still arguing about the same three things.
+            {POSITIONING}. {SCHEDULE}, live and unedited, hosted by {HOSTS}.
           </p>
         </section>
 
@@ -166,8 +165,7 @@ export default function About() {
             >
               {DEVELOPER.name}
             </a>
-            , {DEVELOPER.role.toLowerCase()}. Available for new work — the link goes
-            straight to his contact page.
+            . Available for new work — the link goes straight to his contact page.
           </p>
         </section>
       </main>

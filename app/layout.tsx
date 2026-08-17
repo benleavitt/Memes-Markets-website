@@ -1,4 +1,6 @@
+import { Analytics } from "@/components/Analytics";
 import { AnalyticsDelegate } from "@/components/AnalyticsDelegate";
+import { ConsentBanner } from "@/components/ConsentBanner";
 import { Footer } from "@/components/Footer";
 import { LivePlayer } from "@/components/player/LivePlayer";
 import { POSITIONING, SCHEDULE } from "@/content/platforms";
@@ -60,6 +62,17 @@ export const metadata: Metadata = {
     title: "Memes & Markets",
     description: `${POSITIONING}. ${SCHEDULE}.`,
   },
+  /**
+   * Google Search Console's meta-tag verification, when a token is configured.
+   *
+   * Next drops the tag entirely when the value is undefined, so an unconfigured
+   * site ships no empty verification tag. The DNS TXT route is the alternative
+   * and needs nothing here — it also survives a change of host, which this does
+   * not, so it is the better option if the domain is under your control.
+   */
+  verification: {
+    google: process.env.NEXT_PUBLIC_GSC_VERIFICATION || undefined,
+  },
 };
 
 /**
@@ -71,9 +84,14 @@ export const metadata: Metadata = {
  *     <Footer/>       every page, so the disclaimer cannot go missing
  *     <LivePlayer/>   Phase 3 — mounts OUTSIDE {children} so navigating
  *                     Home <-> About never unmounts the stream
+ *     <ConsentBanner/> only with a GA id, and only while the choice is undecided
+ *     <Analytics/>    GA4, and nothing at all without a measurement id
  *   </body>
  */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  // Read once: the banner and the tag must agree about whether GA exists.
+  const gaId = process.env.NEXT_PUBLIC_GA_ID;
+
   return (
     <html
       lang="en"
@@ -88,6 +106,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Footer />
         <LivePlayer />
         <AnalyticsDelegate />
+        {/* BOTH are gated on the measurement id, not just the tag.
+            The banner asks a specific question — "may we use Google Analytics" —
+            and with no id configured there is no Google Analytics to ask about.
+            Showing it anyway would put a false statement in front of every
+            visitor and harvest consent for something that does not run, which is
+            worse than not asking: a cookie notice on a site that sets no cookies
+            is the kind of thing that teaches people to dismiss them all. */}
+        {gaId && <ConsentBanner />}
+        <Analytics gaId={gaId} />
       </body>
     </html>
   );

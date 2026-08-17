@@ -41,6 +41,35 @@ fine to deploy first and add them afterwards.
 | `YOUTUBE_API_KEY` | Production, Preview | The audience numbers on the landing page. **Without it they never change** — see below. |
 | `PARTNER_SHEET_WEBHOOK` | Production, Preview | Apps Script `/exec` URL for partnership enquiries. Without it `/api/partner` answers 503 and points people at email. |
 | `PARTNER_SHEET_SECRET` | Production, Preview | Must match `SHARED_SECRET` in the Apps Script. |
+| `NEXT_PUBLIC_GA_ID` | Production only | GA4 measurement id. Leave unset on Preview or staging traffic pollutes the numbers. |
+| `NEXT_PUBLIC_GSC_VERIFICATION` | Production only | Search Console meta-tag token. Unnecessary if you verify by DNS. |
+
+## Analytics, consent, and Search Console
+
+Google Analytics runs behind **Consent Mode v2, defaulted to denied**. The
+bootstrap in `components/Analytics.tsx` is `beforeInteractive` on purpose: the
+`consent default` call must execute before `gtag.js`, or Google initialises with
+its own defaults — which are granted — and sets a cookie before anyone has been
+asked. That ordering is the feature; do not "tidy" it to `afterInteractive`.
+
+The same bootstrap reads the stored choice out of `localStorage` and uses it as
+the default. Without that, a returning visitor who had already pressed Accept
+came back defaulted to denied and their consent was silently discarded on every
+visit after the first. `e2e/player.spec.ts` pins both directions.
+
+`NEXT_PUBLIC_GA_ID` is **Production only**. It is not a secret — every GA site
+exposes it in page source — but setting it on Preview means every branch
+deployment and every Playwright run reports into the same property.
+
+**Search Console.** Verify by DNS TXT if the domain is yours to edit: it needs no
+env var and survives a change of host. Otherwise take the token from the "HTML
+tag" method — the `content` value alone, not the whole element — and put it in
+`NEXT_PUBLIC_GSC_VERIFICATION`. Then submit `/sitemap.xml`, which already lists
+every indexable page and is generated from `app/sitemap.ts`.
+
+Note that `app/robots.ts` returns `Disallow: /` on anything that is not a
+Production deployment, so a Preview URL cannot be verified or indexed — verify
+against production.
 
 ## The audience numbers
 

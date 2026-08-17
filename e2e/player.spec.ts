@@ -420,6 +420,19 @@ test.describe("navigation", () => {
    * "simplified" the href would break exactly the thing it is for, and would
    * look like no change at all.
    */
+  test("the footer reaches the legal pages", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("link", { name: "Privacy", exact: true }).first().click();
+    await expect(page).toHaveURL(/\/privacy$/);
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(
+      "What we collect",
+    );
+
+    await page.goto("/");
+    await page.getByRole("link", { name: "Terms", exact: true }).first().click();
+    await expect(page).toHaveURL(/\/terms$/);
+  });
+
   test("the footer credits the developer and links their contact section", async ({
     page,
   }) => {
@@ -429,4 +442,79 @@ test.describe("navigation", () => {
     await expect(credit).toHaveAttribute("href", /ochanda-charles\.me\/#contact$/);
     await expect(credit).toHaveAttribute("target", "_blank");
   });
+});
+
+/**
+ * The cookie notice.
+ *
+ * Every assertion here is about a failure that is INVISIBLE when it happens.
+ * Consent state lives in Google's dataLayer, so a broken bootstrap looks exactly
+ * like a working one from the page — which is precisely how the returning-visitor
+ * bug survived being built: someone who had pressed Accept came back defaulted to
+ * denied, and nothing on screen said so.
+ *
+ * The tests stub googletagmanager.com. Nothing here is testing Google's library,
+ * and letting it load would make the suite depend on their CDN and on a real
+ * measurement id existing.
+ */
+test.describe("cookie consent", () => {
+  /**
+   * `dataLayer` is cast rather than imported. types/gtag.d.ts declares it for the
+   * app, but this file compiles under e2e/tsconfig.json, and pulling the app's
+   * ambient types in just to read one array would couple the suite to them.
+   */
+  const consentState = (page: Page) =>
+    page.evaluate(() => {
+      const layer =
+        (window as unknown as { dataLayer?: ArrayLike<unknown>[] }).dataLayer ?? [];
+      return {
+        stored: localStorage.getItem("mm-consent"),
+        calls: layer
+          .map((a) => Array.from(a))
+          .filter((c) => c[0] === "consent")
+          .map((c) => [
+            c[1],
+            (c[2] as { analytics_storage?: string } | undefined)?.analytics_storage,
+          ]),
+      };
+    });
+
+  test.beforeEach(async ({ context }) => {
+    await context.route("https://www.googletagmanager.com/**", (route) =>
+      route.fulfill({ contentType: "application/javascript", body: "" }),
+    );
+  });
+
+  test("defaults to denied and sets no cookies before a choice", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("complementary", { name: "Cookies" })).toBeVisible();
+
+    const { stored, calls } = await consentState(page);
+    expect(stored).toBeNull();
+    expect(calls).toEqual([["default", "denied"]]);
+
+    const ga = (await page.context().cookies()).filter((c) => c.name.startsWith("_ga"));
+    expect(ga).toEqual([]);
+  });
+
+  for (const [button, expected] of [
+    ["Accept", "granted"],
+    ["Decline", "denied"],
+  ] as const) {
+    test(`${button} is remembered across a reload`, async ({ page }) => {
+      await page.goto("/");
+      await page.getByRole("button", { name: button }).click();
+      await expect(page.getByRole("complementary", { name: "Cookies" })).toHaveCount(0);
+
+      await page.reload();
+      // The banner must not come back — asking again is not taking an answer.
+      await expect(page.getByRole("complementary", { name: "Cookies" })).toHaveCount(0);
+
+      const { stored, calls } = await consentState(page);
+      expect(stored).toBe(expected);
+      // The default itself carries the stored choice, so there is no window in
+      // which a returning visitor's consent is wrong. See components/Analytics.tsx.
+      expect(calls).toEqual([["default", expected]]);
+    });
+  }
 });
