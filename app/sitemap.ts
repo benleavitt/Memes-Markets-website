@@ -2,7 +2,7 @@ import { siteUrl } from "@/lib/site";
 import type { MetadataRoute } from "next";
 
 /**
- * The three real pages. /subscribed is deliberately absent — it is the landing
+ * Every indexable page. /subscribed is deliberately absent — it is the landing
  * spot for a form post, carries robots: noindex, and means nothing on its own.
  *
  * Absolute URLs come from siteUrl(), so this follows the custom domain the day
@@ -16,5 +16,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // Above /about on purpose: this is the page the site most wants found by
     // someone searching for a way to sponsor the show.
     { url: `${base}/partner`, changeFrequency: "monthly", priority: 0.8 },
+    // Included but ranked last. Search engines expect a site to have these and
+    // note their absence; nobody is searching for them, so they should not
+    // compete with the pages that matter.
+    { url: `${base}/privacy`, changeFrequency: "yearly", priority: 0.2 },
+    { url: `${base}/terms`, changeFrequency: "yearly", priority: 0.2 },
   ];
 }
