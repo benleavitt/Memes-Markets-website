@@ -1,5 +1,6 @@
 import { NewsletterForm } from "@/components/ui/NewsletterForm";
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
+import { DEVELOPER } from "@/content/credits";
 import {
   DISCLAIMER,
   HOSTS,
@@ -174,12 +175,42 @@ export function Footer() {
           <p className="type-body-sm" style={{ color: "var(--mm-text-2)" }}>
             {DISCLAIMER}
           </p>
-          <p
-            className="type-mono-ticker-sm uppercase whitespace-nowrap"
-            style={{ color: "var(--mm-text-3)" }}
-          >
-            © {new Date().getFullYear()} Memes &amp; Markets
-          </p>
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+            {/* The developer credit. Underlined at rest rather than on hover —
+                the whole point of it is that somebody who is not looking for it
+                notices it is a link, which is the same argument as the nav
+                buttons above, at a quieter volume.
+
+                rel="author" is the accurate relationship, and there is no
+                nofollow: this is a real credit on a real site, and stripping the
+                one thing that makes it worth anything to the person who built it
+                would be a strange way to say thank you. */}
+            <a
+              href={DEVELOPER.href}
+              target="_blank"
+              rel="author noreferrer noopener"
+              className="type-mono-ticker-sm uppercase underline decoration-[var(--mm-border-strong)] underline-offset-4 transition-colors duration-150 hover:text-[var(--mm-text-2)] hover:decoration-[var(--mm-accent)]"
+              style={{ color: "var(--mm-text-3)" }}
+            >
+              Site by {DEVELOPER.name}
+            </a>
+
+            <span
+              aria-hidden="true"
+              className="hidden sm:inline"
+              style={{ color: "var(--mm-border-strong)" }}
+            >
+              ·
+            </span>
+
+            <p
+              className="type-mono-ticker-sm uppercase whitespace-nowrap"
+              style={{ color: "var(--mm-text-3)" }}
+            >
+              © {new Date().getFullYear()} Memes &amp; Markets
+            </p>
+          </div>
         </div>
       </div>
     </footer>

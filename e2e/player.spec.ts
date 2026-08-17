@@ -412,4 +412,21 @@ test.describe("navigation", () => {
     await expect(page.locator("body > header")).toHaveCount(0);
     await expect(page.locator("body > main")).toHaveCount(1);
   });
+
+  /**
+   * The developer credit. Pinned because the value of it is entirely in the
+   * fragment: without `#contact` it lands someone at the top of a portfolio to
+   * scroll and hunt, which is how an interested click gets lost. A tidy-up that
+   * "simplified" the href would break exactly the thing it is for, and would
+   * look like no change at all.
+   */
+  test("the footer credits the developer and links their contact section", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const credit = page.locator("footer").getByRole("link", { name: /site by/i });
+    await expect(credit).toBeVisible();
+    await expect(credit).toHaveAttribute("href", /ochanda-charles\.me\/#contact$/);
+    await expect(credit).toHaveAttribute("target", "_blank");
+  });
 });
