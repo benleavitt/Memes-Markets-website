@@ -1,3 +1,4 @@
+import { NewsletterPosts } from "@/components/NewsletterPosts";
 import { OrbitSphere } from "@/components/hero/OrbitSphere";
 import { PlatformBar } from "@/components/hero/PlatformBar";
 import { SocialProof } from "@/components/hero/SocialProof";
@@ -6,6 +7,7 @@ import { InfoPanelContent } from "@/components/info/InfoPanelContent";
 import { MoreInfo } from "@/components/info/MoreInfo";
 import { POSITIONING, SCHEDULE } from "@/content/platforms";
 import { getEpisodes } from "@/lib/episodes";
+import { getRecentPosts } from "@/lib/newsletter-posts";
 import { ORBIT } from "@/lib/orbit";
 import { JsonLd, podcastSeriesSchema } from "@/lib/schema";
 import { getChannelStats } from "@/lib/stats";
@@ -32,9 +34,10 @@ export default async function Home() {
   // and lib/orbit.test.ts checks it against the CSS the hero actually renders from.
   // Both are on the same hourly ISR window, so they are one round of work rather
   // than two — and neither can fail the render: each falls back to committed data.
-  const [episodes, stats] = await Promise.all([
+  const [episodes, stats, posts] = await Promise.all([
     getEpisodes(ORBIT.COUNT),
     getChannelStats(),
+    getRecentPosts(),
   ]);
 
   return (
@@ -86,6 +89,10 @@ export default async function Home() {
       </section>
 
       <SocialProof stats={stats} />
+
+      {/* Renders nothing unless the newsletter is actually running — see
+          FRESH_DAYS in lib/posts.ts. */}
+      <NewsletterPosts posts={posts} />
     </main>
   );
 }
