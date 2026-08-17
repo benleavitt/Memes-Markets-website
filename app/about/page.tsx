@@ -1,5 +1,6 @@
 import { SiteHeader } from "@/components/SiteHeader";
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
+import { DEVELOPER } from "@/content/credits";
 import { HOST_LIST } from "@/content/hosts";
 import { HOSTS, PLATFORMS, POSITIONING, SCHEDULE } from "@/content/platforms";
 import { JsonLd, aboutSchema } from "@/lib/schema";
@@ -136,6 +137,38 @@ export default function About() {
               </li>
             ))}
           </ul>
+        </section>
+
+        {/* The same credit as the footer, given the room this page has for it.
+            Last, and in the same low-contrast register as "As heard on" above:
+            this is the show's page about the show, and a developer credit that
+            competed with the hosts for attention would be reading the room
+            wrong. The link still goes straight to the contact section. */}
+        <section aria-labelledby="credits-heading" className="mt-24">
+          <h2
+            id="credits-heading"
+            className="type-mono-label"
+            style={{ color: "var(--mm-text-3)" }}
+          >
+            Site credits
+          </h2>
+          <p
+            className="type-body-lg mt-6 max-w-[62ch]"
+            style={{ color: "var(--mm-text-2)" }}
+          >
+            Designed and built by{" "}
+            <a
+              href={DEVELOPER.href}
+              target="_blank"
+              rel="author noreferrer noopener"
+              className="underline decoration-[var(--mm-border-strong)] underline-offset-4 transition-colors duration-150 hover:decoration-[var(--mm-accent)]"
+              style={{ color: "var(--mm-text)" }}
+            >
+              {DEVELOPER.name}
+            </a>
+            , {DEVELOPER.role.toLowerCase()}. Available for new work — the link goes
+            straight to his contact page.
+          </p>
         </section>
       </main>
     </>

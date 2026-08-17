@@ -14,6 +14,8 @@
  */
 export const DEVELOPER = {
   name: "Ochanda Charles Otieno",
+  /** As the portfolio itself puts it, so the two do not describe him differently. */
+  role: "Full stack developer & community builder",
   /**
    * The fragment is load-bearing — see above. Both the apex and www answer 200,
    * so this is the address as given rather than a guess at the canonical one.
