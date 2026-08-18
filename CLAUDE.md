@@ -33,7 +33,10 @@ the wordmark is the header.
    hero of real-but-old episodes beats an empty one — but it means a broken feed
    is invisible from the site. `.github/workflows/refresh-episodes.yml` is the
    only thing that will ever tell you, by going red. Do not "fix" a failing run by
-   loosening the check; the orbit is frozen whenever it fails.
+   loosening the check; the orbit is frozen whenever it fails. A run that ends in
+   a warning is the third state, not a soft failure: YouTube refused the runner's
+   IP, proven by a control feed failing beside ours. Nothing is wrong with the
+   feed. If that warning repeats for more than a day or so, check it by hand.
 
 ## Testing
 

@@ -45,10 +45,13 @@ jobs:
       # the honest way to install it.
       - run: npm ci
 
-      # The script retries a failing feed for about a minute before giving up —
-      # YouTube throttles shared runner IPs with a bare 404, and a red run has to
-      # mean the feed is broken or it stops being worth reading. See the note on
-      # ATTEMPTS in the script.
+      # A red run here has to mean the feed is broken, or it stops being worth
+      # reading. YouTube refuses shared runner IPs with a bare 404, and retries
+      # alone could not tell that apart from a dead channel — they all leave from
+      # the same blocked IP. So when the feed never answers, the script asks a
+      # control feed whether this runner is being refused everything: refused
+      # everything is a warning and a green run, our feed failing alone is still
+      # red. See the note on CONTROL_FEED in the script.
       - name: Fetch feed and refresh fallback
         id: refresh
         run: node scripts/refresh-episodes.mjs
