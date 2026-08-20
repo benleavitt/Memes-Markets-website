@@ -5,7 +5,7 @@ import type { PlatformId } from "@/content/platforms";
  * Decorative by default: the surrounding link carries the accessible name, so
  * announcing the icon too would make a screen reader say every platform twice.
  */
-const PATHS: Record<PlatformId | "highlights", string[]> = {
+const PATHS: Record<PlatformId | "highlights" | "tiktok", string[]> = {
   youtube: [
     "M23.5 6.9a3 3 0 0 0-2.1-2.1C19.5 4.3 12 4.3 12 4.3s-7.5 0-9.4.5A3 3 0 0 0 .5 6.9C0 8.8 0 12 0 12s0 3.2.5 5.1a3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1c.5-1.9.5-5.1.5-5.1s0-3.2-.5-5.1zM9.5 15.6V8.4l6.3 3.6-6.3 3.6z",
   ],
@@ -25,6 +25,9 @@ const PATHS: Record<PlatformId | "highlights", string[]> = {
     "M12 14.2a2.6 2.6 0 0 0 2.6-2.6V6.1a2.6 2.6 0 1 0-5.2 0v5.5a2.6 2.6 0 0 0 2.6 2.6zm4.9-2.9a.9.9 0 0 0-1.8 0 3.1 3.1 0 0 1-6.2 0 .9.9 0 0 0-1.8 0 4.9 4.9 0 0 0 4 4.8v1.6H9.4a.9.9 0 0 0 0 1.8h5.2a.9.9 0 0 0 0-1.8h-1.7v-1.6a4.9 4.9 0 0 0 4-4.8z",
     "M12 0a12 12 0 0 0-8.5 20.5.9.9 0 0 0 1.3-1.3A10.2 10.2 0 1 1 19.2 19.2a.9.9 0 1 0 1.3 1.3A12 12 0 0 0 12 0z",
   ],
+  tiktok: [
+    "M16.6 0h-3.3v13.4a2.7 2.7 0 1 1-2.7-2.7c.2 0 .4 0 .5.1V7.4a6 6 0 1 0 5.5 6V6.6a7.4 7.4 0 0 0 4.4 1.4V4.7a4.1 4.1 0 0 1-4.4-4.7z",
+  ],
   substack: [
     "M3 2h18v2.6H3V2zm0 5.2h18v2.6H3V7.2zM3 12.4 12 17l9-4.6V22l-9-4.6L3 22v-9.6z",
   ],
@@ -37,7 +40,7 @@ export function PlatformIcon({
   id,
   size = 20,
 }: {
-  id: PlatformId | "highlights";
+  id: PlatformId | "highlights" | "tiktok";
   size?: number;
 }) {
   return (
