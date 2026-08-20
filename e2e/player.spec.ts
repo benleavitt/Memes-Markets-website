@@ -183,125 +183,234 @@ test.describe("home", () => {
    * "It is a link with an href" is not the same claim as "it opens".
    */
   /**
-   * The bug the test above could not see, because that one disables the drift.
+   * VIEWPORT IS TALLER THAN THE DEFAULT ON PURPOSE, for every test below that
+   * drives page.mouse with raw coordinates.
    *
-   * Every card on this belt is always moving, so clicking one means aiming at a
-   * moving target and the pointer travels a few pixels doing it. The drag
-   * threshold was 5px, which is inside the noise of an ordinary click — so a
-   * normal click crossed it, turned the belt a little, and had its click
-   * swallowed. Reported as "I get to spin the orbit but not go to the video".
+   * Those coordinates do not scroll — unlike locator.click() — and since the
+   * audience band moved above the orbit, the first card sits at y=771 on a
+   * 720px-tall viewport. Every press then landed outside the window and did
+   * nothing.
    *
-   * Deliberately runs with the drift LIVE and asserts on the numbers either side
-   * of the threshold, because "does a click work" and "does a drag not open
-   * anything" are the same question asked at two distances.
+   * The obvious fix, scrollIntoViewIfNeeded(), is WRONG here and was tried:
+   * OrbitSphere turns the belt on page scroll (SCROLL_SENSITIVITY), so scrolling
+   * to reveal the card rotates it away from the box that was just measured. It
+   * broke a test that had been passing.
+   *
+   * A viewport that fits the orbit removes the scroll entirely, which is what
+   * these tests actually need — none of them is about scrolling.
    */
-  for (const travel of [0, 6, 10]) {
-    test(`a click that wobbles ${travel}px still opens the card`, async ({ page }) => {
+  test.describe(() => {
+    test.use({ viewport: { width: 1280, height: 1100 } });
+
+    /**
+     * The bug the test above could not see, because that one disables the drift.
+     *
+     * Every card on this belt is always moving, so clicking one means aiming at a
+     * moving target and the pointer travels a few pixels doing it. The drag
+     * threshold was 5px, which is inside the noise of an ordinary click — so a
+     * normal click crossed it, turned the belt a little, and had its click
+     * swallowed. Reported as "I get to spin the orbit but not go to the video".
+     *
+     * Deliberately runs with the drift LIVE and asserts on the numbers either side
+     * of the threshold, because "does a click work" and "does a drag not open
+     * anything" are the same question asked at two distances.
+     */
+    for (const travel of [0, 6, 10]) {
+      test(`a click that wobbles ${travel}px still opens the card`, async ({ page }) => {
+        await page.goto("/");
+        const card = page.locator(".mm-orbit-slot a").first();
+        const box = (await card.boundingBox()) ?? { x: 0, y: 0, width: 0, height: 0 };
+        const x = box.x + box.width / 2;
+        const y = box.y + 40;
+
+        const popupPromise = page.waitForEvent("popup");
+        await page.mouse.move(x, y);
+        await page.mouse.down();
+        await page.waitForTimeout(80);
+        if (travel) await page.mouse.move(x + travel, y, { steps: 3 });
+        await page.mouse.up();
+
+        const popup = await popupPromise;
+        expect(popup.url()).toMatch(/youtube\.com/);
+        await popup.close();
+      });
+    }
+
+    /**
+     * EVERY CARD OPENS, NOT JUST THE FIRST ONE.
+     *
+     * This exists because the whole suite used `.first()` — card index 0 — while
+     * the slot's onFocus handler called goTo(-i * step). At i = 0 that rotates by
+     * nothing, so card 0 was the ONE card in twelve that could not reproduce the
+     * bug, and every test reached for it.
+     *
+     * On any other card, clicking focused the anchor, the belt span to bring that
+     * card to the front, the card slid out from under the pointer, and the click
+     * never landed: the orbit turned and the video never opened. Reported twice,
+     * and it survived a first fix aimed at the drag threshold.
+     *
+     * Reduced motion freezes the drift so slot index maps to a stable on-screen
+     * position: 0, 1, 2, 10 and 11 are the front arc. Slots 3..9 sit at 90-270deg
+     * with backface-visibility hidden and are correctly not clickable.
+     */
+    for (const idx of [1, 2, 11]) {
+      test(`orbit card ${idx} opens on click without turning the belt`, async ({
+        page,
+      }) => {
+        await page.emulateMedia({ reducedMotion: "reduce" });
+        await page.goto("/");
+
+        const belt = page.locator(".mm-orbit-belt");
+        const nudge = () =>
+          belt.evaluate(
+            (el) => Number.parseFloat(el.style.getPropertyValue("--nudge")) || 0,
+          );
+        const before = await nudge();
+
+        const card = page.locator(".mm-orbit-slot").nth(idx).locator("a");
+        const box = (await card.boundingBox()) ?? { x: 0, y: 0, width: 0, height: 0 };
+
+        const popupPromise = page.waitForEvent("popup");
+        await page.mouse.move(box.x + box.width / 2, box.y + 40);
+        await page.mouse.down();
+        await page.waitForTimeout(80);
+        await page.mouse.up();
+
+        const popup = await popupPromise;
+        expect(popup.url()).toMatch(/youtube\.com/);
+        await popup.close();
+
+        // A rotation here is the bug coming back.
+        expect(Math.abs((await nudge()) - before)).toBeLessThan(1);
+      });
+    }
+
+    /**
+     * The other half of that fix: keyboard focus MUST still bring a card round to
+     * the front. Gating onFocus on :focus-visible is what separates the two, and
+     * losing this would leave tabbing through the orbit landing on cards facing
+     * away from the viewer.
+     */
+    test("keyboard focus still turns the belt to the focused card", async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.goto("/");
+
+      const belt = page.locator(".mm-orbit-belt");
+      const nudge = () =>
+        belt.evaluate(
+          (el) => Number.parseFloat(el.style.getPropertyValue("--nudge")) || 0,
+        );
+      const slotIndex = () =>
+        page.evaluate(() => {
+          const slot = document.activeElement?.closest?.(".mm-orbit-slot");
+          return slot
+            ? [...document.querySelectorAll(".mm-orbit-slot")].indexOf(slot)
+            : -1;
+        });
+
+      for (let i = 0; i < 40 && (await slotIndex()) < 0; i++) {
+        await page.keyboard.press("Tab");
+      }
+      expect(await slotIndex()).toBeGreaterThanOrEqual(0);
+
+      const before = await nudge();
+      await page.keyboard.press("Tab");
+      expect(await slotIndex()).toBeGreaterThan(0);
+
+      await expect
+        .poll(async () => Math.abs((await nudge()) - before), { timeout: 4000 })
+        .toBeGreaterThan(1);
+    });
+
+    /**
+     * The other side of the same line. Past the threshold it must be a drag: the
+     * belt turns and nothing opens. Without this, "make clicking work" could be
+     * satisfied by removing the swallow entirely and breaking every drag.
+     */
+    test("a deliberate drag turns the belt and opens nothing", async ({ page }) => {
       await page.goto("/");
       const card = page.locator(".mm-orbit-slot a").first();
+      const belt = page.locator(".mm-orbit-belt");
       const box = (await card.boundingBox()) ?? { x: 0, y: 0, width: 0, height: 0 };
       const x = box.x + box.width / 2;
       const y = box.y + 40;
 
-      const popupPromise = page.waitForEvent("popup");
+      let opened = false;
+      page.once("popup", () => {
+        opened = true;
+      });
+
       await page.mouse.move(x, y);
       await page.mouse.down();
       await page.waitForTimeout(80);
-      if (travel) await page.mouse.move(x + travel, y, { steps: 3 });
+      await page.mouse.move(x - 40, y, { steps: 4 });
       await page.mouse.up();
+      await page.waitForTimeout(1200);
 
-      const popup = await popupPromise;
+      expect(opened).toBe(false);
+      const nudge = await belt.evaluate((el) => el.style.getPropertyValue("--nudge"));
+      expect(Number.parseFloat(nudge)).not.toBe(0);
+    });
+
+    /**
+     * A touch browser leaves :hover stuck on whatever was tapped, so the
+     * hover-to-pause rule used to stop the belt permanently the first time a phone
+     * user touched a card. The pause is now behind `@media (hover: hover)`, and
+     * touch pauses only for the length of the press.
+     */
+    test("the belt is frozen while pressed and drifts again after release", async ({
+      page,
+    }) => {
+      await page.goto("/");
+      const belt = page.locator(".mm-orbit-belt");
+      const card = page.locator(".mm-orbit-slot a").first();
+      const box = (await card.boundingBox()) ?? { x: 0, y: 0, width: 0, height: 0 };
+
+      await page.mouse.move(box.x + box.width / 2, box.y + 40);
+      await page.mouse.down();
+      await expect(belt).toHaveAttribute("data-pressing", "true");
+      await expect(belt).toHaveCSS("animation-play-state", "paused");
+
+      await page.mouse.up();
+      await expect(belt).not.toHaveAttribute("data-pressing", "true");
+    });
+
+    test("an orbit card opens on click, but not at the end of a drag", async ({
+      page,
+    }) => {
+      // Freezes the drift, so the card cannot slide out from under the pointer
+      // between measuring it and pressing it.
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.goto("/");
+
+      const card = page.locator(".mm-orbit-slot a").first();
+      const [popup] = await Promise.all([page.waitForEvent("popup"), card.click()]);
       expect(popup.url()).toMatch(/youtube\.com/);
       await popup.close();
+
+      // Now drag from on top of a card. The belt must turn and nothing must open.
+      const belt = page.locator(".mm-orbit-belt");
+      const box = (await card.boundingBox()) ?? { x: 0, y: 0, width: 0, height: 0 };
+      const x = box.x + box.width / 2;
+      const y = box.y + 60;
+
+      let openedDuringDrag = false;
+      page.once("popup", () => {
+        openedDuringDrag = true;
+      });
+
+      await page.mouse.move(x, y);
+      await page.mouse.down();
+      for (let i = 1; i <= 12; i++) await page.mouse.move(x - i * 12, y);
+      await page.mouse.up();
+      await page.waitForTimeout(500);
+
+      expect(openedDuringDrag).toBe(false);
+      await expect(belt).toHaveAttribute("style", /--nudge/);
+      const nudge = await belt.evaluate((el) => el.style.getPropertyValue("--nudge"));
+      expect(Number.parseFloat(nudge)).not.toBe(0);
     });
-  }
-
-  /**
-   * The other side of the same line. Past the threshold it must be a drag: the
-   * belt turns and nothing opens. Without this, "make clicking work" could be
-   * satisfied by removing the swallow entirely and breaking every drag.
-   */
-  test("a deliberate drag turns the belt and opens nothing", async ({ page }) => {
-    await page.goto("/");
-    const card = page.locator(".mm-orbit-slot a").first();
-    const belt = page.locator(".mm-orbit-belt");
-    const box = (await card.boundingBox()) ?? { x: 0, y: 0, width: 0, height: 0 };
-    const x = box.x + box.width / 2;
-    const y = box.y + 40;
-
-    let opened = false;
-    page.once("popup", () => {
-      opened = true;
-    });
-
-    await page.mouse.move(x, y);
-    await page.mouse.down();
-    await page.waitForTimeout(80);
-    await page.mouse.move(x - 40, y, { steps: 4 });
-    await page.mouse.up();
-    await page.waitForTimeout(1200);
-
-    expect(opened).toBe(false);
-    const nudge = await belt.evaluate((el) => el.style.getPropertyValue("--nudge"));
-    expect(Number.parseFloat(nudge)).not.toBe(0);
-  });
-
-  /**
-   * A touch browser leaves :hover stuck on whatever was tapped, so the
-   * hover-to-pause rule used to stop the belt permanently the first time a phone
-   * user touched a card. The pause is now behind `@media (hover: hover)`, and
-   * touch pauses only for the length of the press.
-   */
-  test("the belt is frozen while pressed and drifts again after release", async ({
-    page,
-  }) => {
-    await page.goto("/");
-    const belt = page.locator(".mm-orbit-belt");
-    const card = page.locator(".mm-orbit-slot a").first();
-    const box = (await card.boundingBox()) ?? { x: 0, y: 0, width: 0, height: 0 };
-
-    await page.mouse.move(box.x + box.width / 2, box.y + 40);
-    await page.mouse.down();
-    await expect(belt).toHaveAttribute("data-pressing", "true");
-    await expect(belt).toHaveCSS("animation-play-state", "paused");
-
-    await page.mouse.up();
-    await expect(belt).not.toHaveAttribute("data-pressing", "true");
-  });
-
-  test("an orbit card opens on click, but not at the end of a drag", async ({ page }) => {
-    // Freezes the drift, so the card cannot slide out from under the pointer
-    // between measuring it and pressing it.
-    await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.goto("/");
-
-    const card = page.locator(".mm-orbit-slot a").first();
-    const [popup] = await Promise.all([page.waitForEvent("popup"), card.click()]);
-    expect(popup.url()).toMatch(/youtube\.com/);
-    await popup.close();
-
-    // Now drag from on top of a card. The belt must turn and nothing must open.
-    const belt = page.locator(".mm-orbit-belt");
-    const box = (await card.boundingBox()) ?? { x: 0, y: 0, width: 0, height: 0 };
-    const x = box.x + box.width / 2;
-    const y = box.y + 60;
-
-    let openedDuringDrag = false;
-    page.once("popup", () => {
-      openedDuringDrag = true;
-    });
-
-    await page.mouse.move(x, y);
-    await page.mouse.down();
-    for (let i = 1; i <= 12; i++) await page.mouse.move(x - i * 12, y);
-    await page.mouse.up();
-    await page.waitForTimeout(500);
-
-    expect(openedDuringDrag).toBe(false);
-    await expect(belt).toHaveAttribute("style", /--nudge/);
-    const nudge = await belt.evaluate((el) => el.style.getPropertyValue("--nudge"));
-    expect(Number.parseFloat(nudge)).not.toBe(0);
-  });
+  }); // end of the taller-viewport block
 
   test("more info opens a panel and escape closes it", async ({ page }) => {
     await page.goto("/");
