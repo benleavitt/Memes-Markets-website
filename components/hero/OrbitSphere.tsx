@@ -361,9 +361,31 @@ export function OrbitSphere({ episodes }: { episodes: Episode[] }) {
             key={episode.id}
             className="mm-orbit-slot"
             style={{ "--a": `${i * step}deg` } as React.CSSProperties}
-            // Tabbing to a card that is round the back is disorienting, so bring
-            // it to the front. Keyboard order then matches what is on screen.
-            onFocus={() => goTo(-i * step)}
+            // KEYBOARD FOCUS ONLY. Tabbing to a card that is round the back is
+            // disorienting, so bring it to the front; keyboard order then
+            // matches what is on screen.
+            //
+            // The :focus-visible guard is not a nicety — without it this was the
+            // single worst bug on the site. A mouse click focuses the anchor
+            // too, so clicking any card fired goTo() and span the belt by
+            // -i * step. The card slid out from under the pointer before the
+            // click completed, so the anchor never activated: the orbit turned
+            // and the video never opened. Reported twice, and survived a first
+            // fix aimed at the drag threshold, which was a real but lesser
+            // cause.
+            //
+            // It hid from the tests because every one of them used .first() —
+            // card index 0, where goTo(-0 * step) rotates by nothing at all.
+            // The one card in twelve that could not reproduce it.
+            //
+            // :focus-visible is exactly the distinction wanted: true when the
+            // browser judges focus should be shown (keyboard), false for a
+            // pointer press on a link.
+            onFocus={(e) => {
+              if ((e.target as HTMLElement).matches(":focus-visible")) {
+                goTo(-i * step);
+              }
+            }}
           >
             <OrbitCard episode={episode} priority={i < 3} />
           </li>

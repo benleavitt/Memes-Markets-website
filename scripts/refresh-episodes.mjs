@@ -41,9 +41,16 @@ const checkOnly = process.argv.includes("--check");
  * runtime tears its own handles down first.
  */
 class FeedError extends Error {
-  constructor(what, detail) {
+  constructor(what, detail, { transport = false } = {}) {
     super(what);
     this.detail = detail;
+    /**
+     * True when the feed never answered at all, false when it answered with
+     * something the parser could not use. Only the first kind can be YouTube
+     * refusing the caller rather than the feed being broken, so only the first
+     * kind is worth a second opinion — see CONTROL_FEED.
+     */
+    this.transport = transport;
   }
 }
 
@@ -73,7 +80,41 @@ const BACKOFF_MS = [5_000, 15_000, 45_000];
 /** 404 is in here because of the throttling behaviour described above. */
 const RETRYABLE = new Set([404, 408, 425, 429, 500, 502, 503, 504]);
 
+/**
+ * A second, unrelated feed, used to tell the two 404s apart.
+ *
+ * WHY THIS EXISTS RATHER THAN MORE RETRIES. The retries above were the previous
+ * answer to a throttled runner, and on 2026-08-18 a throttle simply outlasted
+ * them: four attempts, four 404s, 65 seconds, and the same URL answering 200
+ * from a desktop minutes later. Widening that window again would be the check
+ * being loosened, which rule 5 in CLAUDE.md forbids — and it would not work
+ * anyway, because every retry leaves from the same runner IP and an IP block
+ * does not care how long you knock.
+ *
+ * So this asks a different question instead of asking the same one harder. Once
+ * our feed has failed every attempt, fetch a channel that will outlive this
+ * repo, from the same runner, at the same moment, with the same user-agent:
+ *
+ *   control also fails  -> YouTube is refusing this runner, not this channel.
+ *   control answers 200 -> our feed alone is gone. That is the real alarm, and
+ *                          it is now evidence-backed rather than inferred.
+ *
+ * This does not give a broken feed anywhere to hide. Each scheduled run gets a
+ * different runner IP and the block is per-IP, so a genuinely dead feed goes red
+ * on the first run that is not throttled — twice a day, so within about a day. A
+ * throttle can delay the alarm by a run. It cannot silence it.
+ */
+const CONTROL_FEED =
+  "https://www.youtube.com/feeds/videos.xml?channel_id=UCBR8-60-B28hp2BmDPdntcQ";
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** Module scope because the throttled path below reports `changed` as well. */
+const setOutput = (changed) => {
+  if (process.env.GITHUB_OUTPUT) {
+    writeFileSync(process.env.GITHUB_OUTPUT, `changed=${changed}\n`, { flag: "a" });
+  }
+};
 
 /**
  * Fetch the feed, retrying transient failures. Returns the body on success.
@@ -108,6 +149,59 @@ async function fetchFeed() {
   throw new FeedError(
     `the feed did not answer across ${tried.length} attempt(s)`,
     tried.join("\n"),
+    { transport: true },
+  );
+}
+
+/**
+ * Second opinion on a feed that never answered: is YouTube refusing this runner,
+ * or has our channel actually gone? See CONTROL_FEED for why that is the question
+ * worth asking, and why asking the original one harder is not.
+ *
+ * Conservative on purpose. Only a control feed that fails too buys any silence.
+ * If the control cannot be reached at all the answer is unknown, and an unknown
+ * keeps the alarm rather than muting it.
+ */
+async function runnerIsBlocked() {
+  try {
+    const res = await fetch(CONTROL_FEED, { headers: { "user-agent": FEED_UA } });
+    // Drained so the socket closes and the process can exit on its own.
+    await res.text();
+    console.log(`control feed answered HTTP ${res.status}`);
+    return !res.ok;
+  } catch (err) {
+    console.log(`control feed could not be reached: ${err.message}`);
+    return false;
+  }
+}
+
+/**
+ * The throttled case: loud in the log, annotated on the run, but green.
+ *
+ * Green because nothing has been shown to be wrong with the feed, and a red
+ * light that fires on someone else's rate limiter is a red light people stop
+ * reading — which costs the real failure its only chance of being noticed.
+ */
+function warnBlocked(err) {
+  if (process.env.GITHUB_ACTIONS) {
+    console.log(
+      "::warning title=Feed check skipped::YouTube refused this runner's IP, not " +
+        "the feed. The fallback was left alone.",
+    );
+  }
+  console.warn(`\nFEED CHECK SKIPPED: ${err.message}`);
+  if (err.detail) console.warn(err.detail);
+  console.warn(
+    [
+      "",
+      "The control feed failed from this runner too, so this is YouTube blocking",
+      "the runner by IP rather than anything wrong with the channel. Nothing was",
+      "written; the fallback is unchanged.",
+      "",
+      "A genuinely dead feed still goes red — the next run gets a different IP.",
+      "If this warning repeats for more than a day or so, check the feed by hand:",
+      `  ${FEED}`,
+    ].join("\n"),
   );
 }
 
@@ -194,12 +288,6 @@ async function main() {
   console.log(`feed ok: ${episodes.length} episodes, newest ${episodes[0].published}`);
   console.log(`         ${episodes[0].title}`);
 
-  const setOutput = (changed) => {
-    if (process.env.GITHUB_OUTPUT) {
-      writeFileSync(process.env.GITHUB_OUTPUT, `changed=${changed}\n`, { flag: "a" });
-    }
-  };
-
   if (JSON.stringify(current.episodes) === JSON.stringify(next.episodes)) {
     console.log("fallback already current, nothing to write");
     setOutput(false);
@@ -224,7 +312,14 @@ async function main() {
 try {
   await main();
 } catch (err) {
-  if (err instanceof FeedError) report(err);
-  else console.error(err);
-  process.exitCode = 1;
+  // A feed that never answered gets a second opinion before it is called broken.
+  // Anything else — parsed but empty, dateless, untitled — is unambiguously ours.
+  if (err instanceof FeedError && err.transport && (await runnerIsBlocked())) {
+    warnBlocked(err);
+    setOutput(false);
+  } else {
+    if (err instanceof FeedError) report(err);
+    else console.error(err);
+    process.exitCode = 1;
+  }
 }

@@ -51,7 +51,14 @@ export default function About() {
           >
             Hosted by
           </h2>
-          <ul className="mt-8 grid gap-6 md:grid-cols-2">
+          {/* items-start, so each card ends where its own bio ends.
+              A CSS grid stretches every item to the tallest row by default, and
+              the two bios are nowhere near the same length — Ben's runs six
+              paragraphs against Keith's three. That left 369px of empty card
+              under Keith, which does not read as whitespace; it reads as content
+              that failed to load. Ragged bottoms are the honest shape for two
+              biographies of different lengths. */}
+          <ul className="mt-8 grid items-start gap-6 md:grid-cols-2">
             {HOST_LIST.map((host, i) => (
               <li
                 key={host.name}
@@ -86,9 +93,17 @@ export default function About() {
                   >
                     {host.role}
                   </p>
-                  <p className="type-body-md mt-4" style={{ color: "var(--mm-text-2)" }}>
-                    {host.bio}
-                  </p>
+                  <div className="mt-4 flex flex-col gap-3">
+                    {host.bio.map((para) => (
+                      <p
+                        key={para}
+                        className="type-body-md"
+                        style={{ color: "var(--mm-text-2)" }}
+                      >
+                        {para}
+                      </p>
+                    ))}
+                  </div>
                   {host.links && host.links.length > 0 && (
                     <ul className="mt-5 flex flex-wrap gap-4">
                       {host.links.map((l) => (

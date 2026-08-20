@@ -71,6 +71,13 @@ export default async function Home() {
           </MoreInfo>
         </div>
 
+        {/* Above the orbit on purpose — the audience should be one of the
+            first things a visitor registers, not a band 900px down. Compact
+            enough that the sphere still clears a laptop fold. */}
+        <div className="mt-7 w-full">
+          <SocialProof stats={stats} />
+        </div>
+
         <div className="mt-5 w-full">
           <OrbitSphere episodes={episodes} />
         </div>
@@ -87,8 +94,6 @@ export default async function Home() {
           </span>
         </p>
       </section>
-
-      <SocialProof stats={stats} />
 
       {/* Renders nothing unless the newsletter is actually running — see
           FRESH_DAYS in lib/posts.ts. */}
