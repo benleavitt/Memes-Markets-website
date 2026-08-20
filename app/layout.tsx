@@ -47,6 +47,24 @@ export const metadata: Metadata = {
     template: "%s — Memes & Markets",
   },
   description: `${POSITIONING}. ${SCHEDULE}, hosted by Keith D and Ben Leavitt.`,
+  /**
+   * Canonical URL, resolved per route against metadataBase.
+   *
+   * "./" rather than a literal: Next resolves it to whatever path is being
+   * rendered, so every page declares itself canonical without each one having to
+   * remember to. A hardcoded absolute URL here would point all five pages at the
+   * homepage, which is worse than having no tag at all.
+   *
+   * IT MATTERS BECAUSE THIS SITE HAS MORE THAN ONE ADDRESS. Production is a
+   * *.vercel.app host today and a custom domain later, and lib/site.ts resolves
+   * whichever is live at build time. Without a canonical, the same page indexed
+   * under two hosts competes with itself and splits its own ranking — the exact
+   * problem DEPLOY.md already documents for staging.
+   *
+   * Query strings drop out, which is what we want: /subscribed?state=ok and
+   * ?state=invalid are one page, and it carries robots:noindex anyway.
+   */
+  alternates: { canonical: "./" },
   openGraph: {
     type: "website",
     siteName: "Memes & Markets",
