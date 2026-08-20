@@ -53,11 +53,12 @@ export default function About() {
           </h2>
           {/* items-start, so each card ends where its own bio ends.
               A CSS grid stretches every item to the tallest row by default, and
-              the two bios are nowhere near the same length — Ben's runs six
-              paragraphs against Keith's three. That left 369px of empty card
-              under Keith, which does not read as whitespace; it reads as content
-              that failed to load. Ragged bottoms are the honest shape for two
-              biographies of different lengths. */}
+              the bios are not the same length — Ben's runs four paragraphs
+              against Keith's three. Back when Ben's ran six that left 369px of
+              empty card under Keith, which does not read as whitespace; it reads
+              as content that failed to load. The gap is much smaller now, but
+              ragged bottoms are still the honest shape for two biographies of
+              different lengths, and the next rewrite may widen it again. */}
           <ul className="mt-8 grid items-start gap-6 md:grid-cols-2">
             {HOST_LIST.map((host, i) => (
               <li
