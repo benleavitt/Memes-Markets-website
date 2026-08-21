@@ -46,6 +46,13 @@
     font-family: var(--mm-font-display);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    /* Room for the cookie bar, which is fixed to the bottom and full-width.
+     * Without this it sits permanently on top of the last strip of the footer —
+     * the legal links among them — and no amount of scrolling frees them,
+     * because a fixed element does not scroll away. The variable is published by
+     * components/ConsentBanner.tsx and only exists while the bar is up, so the
+     * 0px fallback is the normal case and costs nothing. */
+    padding-bottom: var(--mm-consent-bar-h, 0px);
   }
 
   /* Two gradients on one fixed element that never re-renders.

@@ -1,3 +1,4 @@
+import { CookieSettingsLink } from "@/components/ui/CookieSettingsLink";
 import { NewsletterForm } from "@/components/ui/NewsletterForm";
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
 import { DEVELOPER } from "@/content/credits";
@@ -194,6 +195,11 @@ export function Footer() {
                 {item.label}
               </Link>
             ))}
+
+            {/* Gated on the measurement id for the same reason the banner is: with
+                no analytics configured there are no cookies to have preferences
+                about, and the dialog itself does not mount either. */}
+            {process.env.NEXT_PUBLIC_GA_ID && <CookieSettingsLink />}
 
             {/* The developer credit. Underlined at rest rather than on hover —
                 the whole point of it is that somebody who is not looking for it

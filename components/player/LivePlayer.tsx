@@ -85,8 +85,13 @@ export function LivePlayer() {
       aria-label="Live now"
       data-testid="live-player"
       data-live="true"
-      className="fixed bottom-6 left-6 z-40 hidden w-[340px] overflow-hidden rounded-[16px] sm:block"
+      className="fixed left-6 z-40 hidden w-[340px] overflow-hidden rounded-[16px] transition-[bottom] duration-200 sm:block"
       style={{
+        /* Clear of the cookie bar, which is full-width and would otherwise sit
+           straight on top of this. The variable is published by
+           components/ConsentBanner.tsx and only exists while that bar is up, so
+           the fallback of 0px is the normal case: bottom-6, as before. */
+        bottom: "calc(1.5rem + var(--mm-consent-bar-h, 0px))",
         background: "var(--mm-surface)",
         border: "2px solid var(--mm-accent)",
         boxShadow: "0 0 28px rgb(255 0 0 / 35%), 0 16px 40px -10px rgb(0 0 0 / 60%)",
