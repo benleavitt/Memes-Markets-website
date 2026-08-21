@@ -78,3 +78,45 @@ const getServerSnapshot = (): Consent => null;
 export function useConsent(): Consent {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
+
+/**
+ * Whether the categories dialog is open.
+ *
+ * A second tiny store rather than React state in a provider, because the dialog
+ * is opened from two places that share no ancestor: the banner, and the footer
+ * link that sits on every page. Threading a context through the root layout for
+ * one boolean would cost more than it saves.
+ *
+ * Not persisted. Which categories you chose is worth remembering; whether the
+ * panel happened to be open when you closed the tab is not.
+ */
+let settingsOpen = false;
+const settingsListeners = new Set<() => void>();
+
+function emitSettings() {
+  for (const l of settingsListeners) l();
+}
+
+export function openConsentSettings() {
+  settingsOpen = true;
+  emitSettings();
+}
+
+export function closeConsentSettings() {
+  settingsOpen = false;
+  emitSettings();
+}
+
+function subscribeSettings(listener: () => void): () => void {
+  settingsListeners.add(listener);
+  return () => settingsListeners.delete(listener);
+}
+
+export function useConsentSettingsOpen(): boolean {
+  // Closed on the server, so the dialog is never in the initial HTML.
+  return useSyncExternalStore(
+    subscribeSettings,
+    () => settingsOpen,
+    () => false,
+  );
+}

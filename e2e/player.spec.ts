@@ -607,8 +607,8 @@ test.describe("cookie consent", () => {
   });
 
   for (const [button, expected] of [
-    ["Accept", "granted"],
-    ["Decline", "denied"],
+    ["Accept all", "granted"],
+    ["Reject all", "denied"],
   ] as const) {
     test(`${button} is remembered across a reload`, async ({ page }) => {
       await page.goto("/");
@@ -626,4 +626,62 @@ test.describe("cookie consent", () => {
       expect(calls).toEqual([["default", expected]]);
     });
   }
+
+  test("cookie settings offers only the category the site actually has", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Cookie settings" }).first().click();
+
+    const dialog = page.getByRole("dialog", { name: "Cookie settings" });
+    await expect(dialog).toBeVisible();
+
+    // One switch, not four. Strictly necessary is stated rather than offered,
+    // and there is no marketing category because there is no marketing.
+    await expect(dialog.getByRole("switch")).toHaveCount(1);
+
+    const analytics = dialog.getByRole("switch", { name: "Analytics" });
+    await expect(analytics).toHaveAttribute("aria-checked", "false");
+    await analytics.click();
+    await expect(analytics).toHaveAttribute("aria-checked", "true");
+
+    await dialog.getByRole("button", { name: "Save choices" }).click();
+    await expect(dialog).toHaveCount(0);
+
+    const { stored, calls } = await consentState(page);
+    expect(stored).toBe("granted");
+    expect(calls).toEqual([
+      ["default", "denied"],
+      ["update", "granted"],
+    ]);
+  });
+
+  test("the footer link is the way back once the banner is gone", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Accept all" }).click();
+    await expect(page.getByRole("complementary", { name: "Cookies" })).toHaveCount(0);
+
+    // The banner never returns, so this link is the whole of "you can change
+    // your preferences at any time". If it breaks, that sentence becomes a lie.
+    await page.getByRole("contentinfo").getByRole("button", { name: "Cookies" }).click();
+
+    const dialog = page.getByRole("dialog", { name: "Cookie settings" });
+    await expect(dialog).toBeVisible();
+    // Opens reflecting the stored choice rather than a default.
+    await expect(dialog.getByRole("switch", { name: "Analytics" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+
+    await dialog.getByRole("button", { name: "Reject all" }).click();
+    await expect(dialog).toHaveCount(0);
+    expect((await consentState(page)).stored).toBe("denied");
+
+    // Escape closes without deciding anything.
+    await page.getByRole("contentinfo").getByRole("button", { name: "Cookies" }).click();
+    await expect(dialog).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+    expect((await consentState(page)).stored).toBe("denied");
+  });
 });

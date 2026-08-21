@@ -1,6 +1,7 @@
 import { Analytics } from "@/components/Analytics";
 import { AnalyticsDelegate } from "@/components/AnalyticsDelegate";
 import { ConsentBanner } from "@/components/ConsentBanner";
+import { ConsentSettings } from "@/components/ConsentSettings";
 import { Footer } from "@/components/Footer";
 import { LivePlayer } from "@/components/player/LivePlayer";
 import { POSITIONING, SCHEDULE } from "@/content/platforms";
@@ -103,6 +104,9 @@ export const metadata: Metadata = {
  *     <LivePlayer/>   Phase 3 — mounts OUTSIDE {children} so navigating
  *                     Home <-> About never unmounts the stream
  *     <ConsentBanner/> only with a GA id, and only while the choice is undecided
+ *     <ConsentSettings/> the categories dialog, opened from the banner or the
+ *                     footer link. Outlives the banner: it is how a decided
+ *                     visitor changes their mind.
  *     <Analytics/>    GA4, and nothing at all without a measurement id
  *   </body>
  */
@@ -132,6 +136,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             worse than not asking: a cookie notice on a site that sets no cookies
             is the kind of thing that teaches people to dismiss them all. */}
         {gaId && <ConsentBanner />}
+        {/* Not gated on the banner: the whole point of the footer link is that
+            it works long after the banner is gone. Still gated on the id, for
+            the same reason the banner is — there is nothing to configure. */}
+        {gaId && <ConsentSettings />}
         <Analytics gaId={gaId} />
       </body>
     </html>

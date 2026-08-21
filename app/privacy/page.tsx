@@ -70,12 +70,12 @@ export default function Privacy() {
       <LegalSection id="p-cookies" heading="Cookies and local storage">
         <p>
           <strong style={{ color: "var(--mm-text)" }}>Analytics cookies.</strong> If you
-          press Accept on the cookie notice, Google Analytics sets cookies to count visits
-          and see which pages get read. If you press Decline, or ignore the notice, it
-          sets none. Google Analytics still loads either way, and while consent is denied
-          it reports without cookies or any identifier that could follow you between
-          visits — Google calls these cookieless pings. We would rather say that plainly
-          than claim nothing at all is sent.
+          press Accept all on the cookie notice, or turn Analytics on in Cookie settings,
+          Google Analytics sets cookies to count visits and see which pages get read. If
+          you press Reject all, or ignore the notice, it sets none. Google Analytics still
+          loads either way, and while consent is denied it reports without cookies or any
+          identifier that could follow you between visits — Google calls these cookieless
+          pings. We would rather say that plainly than claim nothing at all is sent.
         </p>
         <p>
           <strong style={{ color: "var(--mm-text)" }}>
@@ -87,8 +87,12 @@ export default function Privacy() {
           browser data removes both.
         </p>
         <p>
-          To change your mind, clear this site&rsquo;s storage in your browser settings;
-          the notice will appear again on your next visit.
+          <strong style={{ color: "var(--mm-text)" }}>Changing your mind.</strong> The
+          notice does not come back once you have answered it, so there is a{" "}
+          <strong style={{ color: "var(--mm-text)" }}>Cookies</strong> link in the footer
+          of every page. It reopens the same categories, set to whatever you chose last
+          time, and takes effect immediately. Clearing this site&rsquo;s storage in your
+          browser settings also works, and puts the notice back on your next visit.
         </p>
       </LegalSection>
 
