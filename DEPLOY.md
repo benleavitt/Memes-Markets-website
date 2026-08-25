@@ -94,6 +94,72 @@ That step is `continue-on-error` on purpose. The scheduled job's red light means
 one thing — the site's parser can no longer read the feed — and a missing stats
 key must never be able to trigger it.
 
+**The cost of that choice: a missing key is silent.** The step prints
+`YOUTUBE_API_KEY is not set.` and the run stays green, so the fallback can drift
+for weeks without anything going red. If the numbers on the live site have pulled
+ahead of `content/channel-stats-fallback.json`, this is why — check the secret
+before looking anywhere else.
+
+### Adding the key as a GitHub Actions secret
+
+The workflow reads `${{ secrets.YOUTUBE_API_KEY }}`, so it needs a **repository
+secret** with exactly that name.
+
+Fastest route, with the `gh` CLI already authenticated:
+
+```bash
+gh secret set YOUTUBE_API_KEY --repo Ochanda-Charles/Memes-Markets-website
+```
+
+It prompts for the value and reads it from stdin, so the key never lands in your
+shell history. Do NOT pass it as `--body` on the command line for that reason.
+
+Through the web UI instead:
+
+1. Open
+   `https://github.com/Ochanda-Charles/Memes-Markets-website/settings/secrets/actions`
+   (or: repo → **Settings** → **Secrets and variables** → **Actions**).
+2. Click **New repository secret**.
+3. **Name:** `YOUTUBE_API_KEY` — exact, case-sensitive.
+4. **Secret:** paste the key from Vercel. It is the same value; one key serves
+   both.
+5. Click **Add secret**.
+
+Three ways this goes wrong, all of which look like "I added it and nothing
+happened":
+
+- **The Variables tab.** It sits next to Secrets and looks equivalent.
+  `secrets.YOUTUBE_API_KEY` cannot read a variable, so a key added there is
+  invisible to the workflow.
+- **An environment secret.** The job declares no `environment:`, so a secret
+  scoped to one resolves empty. It must be repository-wide.
+- **A typo in the name.** There is no error for a secret that does not exist —
+  it resolves to an empty string, which is exactly the state you are trying to
+  fix.
+
+Verify rather than assume. Secrets are write-only, so the only way to know is to
+run the job:
+
+```bash
+gh workflow run refresh-episodes.yml
+gh run watch "$(gh run list --workflow=refresh-episodes.yml --limit 1 --json databaseId --jq '.[0].databaseId')"
+```
+
+Then read the *Refresh channel stats* step. `YOUTUBE_API_KEY is not set.` means it
+still is not. Working looks like:
+
+```
+live: subscribers: 16,300 -> 16,400 (+100)
+      views: 333,318 -> 342,051 (+8,733)
+      videos: 102 -> 104 (+2)
+
+wrote content/channel-stats-fallback.json (2026-08-20)
+```
+
+and a `chore: refresh episode and channel-stat fallbacks` commit that actually
+touches `content/channel-stats-fallback.json`. A commit touching only
+`episodes-fallback.json` means the stats half is still skipping.
+
 ## Partnership enquiries
 
 `scripts/partner-sheet.gs` carries the Apps Script and its setup, in the repo so
