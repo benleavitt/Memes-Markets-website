@@ -71,13 +71,6 @@ export default async function Home() {
           </MoreInfo>
         </div>
 
-        {/* Above the orbit on purpose — the audience should be one of the
-            first things a visitor registers, not a band 900px down. Compact
-            enough that the sphere still clears a laptop fold. */}
-        <div className="mt-7 w-full">
-          <SocialProof stats={stats} />
-        </div>
-
         <div className="mt-5 w-full">
           <OrbitSphere episodes={episodes} />
         </div>
@@ -94,6 +87,13 @@ export default async function Home() {
           </span>
         </p>
       </section>
+
+      {/* BELOW the globe, not above it. It sat above the orbit for a while on the
+          argument that the audience should be the first thing a visitor
+          registers — but that put a row of statistics between the one CTA and
+          the sphere the hero is built around, and the hero stopped reading as a
+          hero. The numbers land better once the show has introduced itself. */}
+      <SocialProof stats={stats} />
 
       {/* Renders nothing unless the newsletter is actually running — see
           FRESH_DAYS in lib/posts.ts. */}

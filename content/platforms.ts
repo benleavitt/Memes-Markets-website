@@ -73,7 +73,7 @@ export const HOSTS = "Keith D & Ben Leavitt";
  * is a PUBLIC address and will be scraped. Swapping it for a dedicated one
  * (partners@ on the domain, say) is a change to this line only.
  */
-export const CONTACT_EMAIL = "memesmarketsteam@gmail.com";
+export const CONTACT_EMAIL = "memesandmarketspod@gmail.com";
 /**
  * The hour comes from lib/live.ts rather than being typed again here. That file
  * already owns the schedule — it is what computes the next slot and decides how
