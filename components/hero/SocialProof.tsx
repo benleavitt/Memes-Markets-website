@@ -11,21 +11,26 @@ import { type ChannelStats, compact } from "@/lib/stats";
  * names the metric, so the row reads as a set of claims rather than a set of
  * figures.
  *
- * THE METRICS ARE NOT ALL THE SAME, on purpose. "Followers" across the board
- * would be tidy and would misrepresent TikTok, which distributes by interest
- * rather than by follower graph — 5,059 followers against 60.4K likes. The likes
- * are both the stronger number and the more truthful one. See content/social.ts,
- * which carries the reasoning for each.
+ * EVERY PLATFORM CELL COUNTS FOLLOWERS. There is a real case for showing
+ * TikTok's likes instead — it distributes by interest rather than by follower
+ * graph, so 5,059 followers understates an account whose videos have earned
+ * 60.4K likes — and this file argued for it until the show said otherwise. One
+ * row of six reads better when every cell counts the same thing, and a reader
+ * comparing "60.4K likes" against "36K followers" is doing conversion work
+ * nobody asked them for. content/social.ts keeps the likes figure and the
+ * argument, so neither has to be reconstructed.
  *
  * WHERE THEY COME FROM. Subscribers, views and episode count are read live from
  * the YouTube Data API on hourly ISR. The other three are typed into
  * content/social.ts by a person, because none of those platforms publishes a
  * figure that can be fetched. A `value: null` renders nothing at all.
  *
- * ABOVE THE ORBIT, and compact enough to stay there. The audience is meant to be
- * one of the first things a visitor registers, which a band 900px down is not —
- * but the sphere below it still has to clear a laptop fold, so this is one row
- * of small type rather than a feature panel.
+ * BELOW THE GLOBE. It spent a while above the orbit, on the argument that the
+ * audience should be the first thing a visitor registers. That was true and
+ * still cost more than it bought: a row of statistics between the one CTA and
+ * the sphere the hero is built around, and the hero stopped reading as a hero.
+ * It stays one row of small type regardless — the numbers are proof, not the
+ * pitch.
  */
 export function SocialProof({ stats }: { stats: ChannelStats }) {
   const items = [
