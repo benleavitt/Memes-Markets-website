@@ -181,7 +181,7 @@ export default function About() {
             >
               {DEVELOPER.name}
             </a>
-            . Available for new work — the link goes straight to his contact page.
+            . The link goes straight to his contact page.
           </p>
         </section>
       </main>
