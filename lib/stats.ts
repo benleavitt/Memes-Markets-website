@@ -35,6 +35,29 @@ import { CHANNEL_ID } from "./feed";
 export type { ChannelStats } from "./channel";
 export { compact, parseStats } from "./channel";
 
+/**
+ * How long a fetched figure may be reused, in seconds.
+ *
+ * TEN MINUTES, NOT AN HOUR, AND THE REASON IS THE PARTNER PAGE. These numbers
+ * render on two routes — the audience band on `/` and the fact row on
+ * `/partner` — and Next caches each rendered route separately. Whichever page
+ * is asked for first starts its own window, so with an hour-long one the two
+ * could sit up to an hour out of step: `/` frozen at 104 episodes while
+ * `/partner`, regenerated later, already said 105. Same API, same key, same
+ * function; two snapshots taken at different moments.
+ *
+ * Next derives a route's revalidate from the shortest fetch inside it, so this
+ * one constant sets the window for BOTH pages and caps the drift between them.
+ * It does not make them identical — only a purge of both routes at the same
+ * instant would, which is `revalidateTag` and a caller to trigger it — but ten
+ * minutes is short enough that nobody catches the two pages disagreeing.
+ *
+ * The quota does not care: both routes share one Data Cache entry for this URL,
+ * so it is ~144 calls a day against a free 10,000, and the hourly episode feed
+ * is untouched — a route regenerating early still reads RSS from its own cache.
+ */
+export const STATS_REVALIDATE = 600;
+
 export const FALLBACK_STATS: ChannelStats = {
   subscribers: fallback.subscribers,
   views: fallback.views,
@@ -53,7 +76,7 @@ export async function getChannelStats(): Promise<ChannelStats> {
 
   try {
     const res = await fetch(statsUrl(CHANNEL_ID, key), {
-      next: { revalidate: 3600 },
+      next: { revalidate: STATS_REVALIDATE },
     });
     if (!res.ok) return FALLBACK_STATS;
     return parseStats(await res.json()) ?? FALLBACK_STATS;
