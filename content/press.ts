@@ -49,11 +49,12 @@ export const PRESS_ITEMS: PressItem[] = [
     href: "https://www.cbc.ca/news/canada/kitchener-waterloo/youtube-student-debt-loan-ben-leavitt-1.5412954",
   },
   {
-    id: "us-news",
-    outlet: "U.S. News & World Report",
-    note: "How students use TikTok and YouTube to pay for college",
-    // Syndicated copy — the link the hosts supplied, and the one that resolves.
-    // The piece is U.S. News' (Emma Kerr, Dec 2019), hence the outlet name.
-    href: "https://www.yahoo.com/news/students-grads-tiktok-youtube-pay-college-152013054.html",
+    id: "starter-story",
+    outlet: "Starter Story",
+    note: "Ben on growing a micro-SaaS to $17K a month",
+    // Canonical watch URL. The link as supplied carried `si=` — a share token
+    // that attributes the click back to whoever copied it — and `feature=youtu.be`.
+    // Neither belongs in a link the whole site sends traffic through.
+    href: "https://www.youtube.com/watch?v=4KfFB-dh71Y",
   },
 ];
