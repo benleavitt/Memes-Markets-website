@@ -26,9 +26,12 @@ export const metadata: Metadata = {
 export default async function Partner() {
   const stats = await getChannelStats();
 
+  // No lifetime view total — see the note in components/hero/SocialProof.tsx.
+  // It came out of both places at once on purpose: a buyer who sees a number on
+  // the landing page and not on the page they were sent to reads it as the show
+  // quietly dropping the figure that got worse.
   const facts = [
     { value: compact(stats.subscribers), label: "YouTube subscribers" },
-    { value: compact(stats.views), label: "Total views" },
     { value: compact(stats.videos), label: "Episodes" },
     { value: "2x", label: "Live every week" },
   ];
@@ -52,9 +55,19 @@ export default async function Partner() {
           what you have in mind.
         </p>
 
+        {/* Column count follows the number of facts rather than a literal 4,
+            which is what left a hole here the moment one was removed. Same
+            --mm-cells trick as the audience band, and the same odd-count rule
+            so the last cell is never stranded in a half-width box on a phone. */}
         <ul
-          className="mt-12 grid grid-cols-2 gap-px border sm:grid-cols-4"
-          style={{ background: "var(--mm-border)", borderColor: "var(--mm-border)" }}
+          className="mt-12 grid grid-cols-2 gap-px border [&>li:last-child:nth-child(odd)]:col-span-2 sm:[grid-template-columns:repeat(var(--mm-cells),minmax(0,1fr))] sm:[&>li:last-child:nth-child(odd)]:col-span-1"
+          style={
+            {
+              background: "var(--mm-border)",
+              borderColor: "var(--mm-border)",
+              "--mm-cells": facts.length,
+            } as React.CSSProperties
+          }
         >
           {facts.map((fact) => (
             <li
