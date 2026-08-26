@@ -20,10 +20,17 @@ import { type ChannelStats, compact } from "@/lib/stats";
  * nobody asked them for. content/social.ts keeps the likes figure and the
  * argument, so neither has to be reconstructed.
  *
- * WHERE THEY COME FROM. Subscribers, views and episode count are read live from
- * the YouTube Data API on hourly ISR. The other three are typed into
- * content/social.ts by a person, because none of those platforms publishes a
- * figure that can be fetched. A `value: null` renders nothing at all.
+ * NO LIFETIME VIEW COUNT. It was here and it was pulled. Every other cell is a
+ * SIZE OF AUDIENCE — people who chose to follow — and a cumulative view total is
+ * a different kind of claim sitting in the same row, which invites the reader to
+ * divide one by the other. It is also the one figure that only ever goes up, so
+ * it flatters without informing. The partner page dropped it for the same
+ * reason. `stats.views` is still fetched and still parsed; nothing renders it.
+ *
+ * WHERE THEY COME FROM. Subscribers and episode count are read live from the
+ * YouTube Data API. The other three are typed into content/social.ts by a
+ * person, because none of those platforms publishes a figure that can be
+ * fetched. A `value: null` renders nothing at all.
  *
  * BELOW THE GLOBE. It spent a while above the orbit, on the argument that the
  * audience should be the first thing a visitor registers. That was true and
@@ -39,13 +46,6 @@ export function SocialProof({ stats }: { stats: ChannelStats }) {
       icon: "youtube" as const,
       value: compact(stats.subscribers),
       metric: "Subscribers",
-      platform: "YouTube",
-    },
-    {
-      key: "yt-views",
-      icon: "youtube" as const,
-      value: compact(stats.views),
-      metric: "Total views",
       platform: "YouTube",
     },
     ...AUDIENCE.filter((a): a is typeof a & { value: number } => a.value !== null).map(
@@ -91,7 +91,13 @@ export function SocialProof({ stats }: { stats: ChannelStats }) {
       </div>
 
       <ul
-        className="grid grid-cols-2 gap-px border sm:[grid-template-columns:repeat(var(--mm-cells),minmax(0,1fr))]"
+        // The last two variants matter once the row holds an ODD number of
+        // cells, which it does since the view count came out: two columns on a
+        // phone would leave the final cell alone in a half-width box with the
+        // border colour showing through the empty half. It spans the full row
+        // instead — and spans one column again from `sm:`, where the row is
+        // laid out by --mm-cells and there is no orphan to fix.
+        className="grid grid-cols-2 gap-px border [&>li:last-child:nth-child(odd)]:col-span-2 sm:[grid-template-columns:repeat(var(--mm-cells),minmax(0,1fr))] sm:[&>li:last-child:nth-child(odd)]:col-span-1"
         style={
           {
             background: "var(--mm-border)",
