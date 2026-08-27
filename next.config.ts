@@ -88,6 +88,18 @@ const config: NextConfig = {
     remotePatterns: [{ protocol: "https", hostname: "i.ytimg.com", pathname: "/vi/**" }],
     formats: ["image/avif", "image/webp"],
   },
+  /**
+   * /index is the homepage under a second address.
+   *
+   * Next answers it with a 200 and the same page — nothing links to it and it is
+   * not in the sitemap, so it is only reachable by guessing, but it is a real
+   * duplicate and it self-canonicalised until app/page.tsx started stating "/"
+   * outright. A permanent redirect settles it at the source rather than asking
+   * Google to work it out from a canonical tag, which is advisory.
+   */
+  async redirects() {
+    return [{ source: "/index", destination: "/", permanent: true }];
+  },
   async headers() {
     return [
       {
