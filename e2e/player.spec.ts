@@ -754,6 +754,64 @@ test.describe("cookie consent", () => {
     expect(views[1]).toContain("/terms");
   });
 
+  /**
+   * The hover state on Accept all / Reject all.
+   *
+   * BOTH ANSWERS, IDENTICALLY, is the assertion that matters. An Accept that is
+   * warmer or livelier than Reject is the standard consent dark pattern, and it
+   * is easy to introduce by accident the moment someone styles the two buttons
+   * separately. They share one component and one class precisely so that cannot
+   * happen quietly; this is what notices if it does.
+   *
+   * The rest of it guards a subtler failure: the hover used to be a lone
+   * border-colour change, 10% white to red on a 1px edge at the bottom of a dark
+   * viewport, which is indistinguishable from a button that does not respond.
+   */
+  test("both consent answers get the same, visible hover", async ({ page }) => {
+    await page.goto("/");
+
+    const read = (name: string) =>
+      page.getByRole("button", { name, exact: true }).evaluate((el) => {
+        const s = getComputedStyle(el);
+        return {
+          bg: s.backgroundColor,
+          border: s.borderTopColor,
+          transform: s.transform,
+        };
+      });
+
+    const restAccept = await read("Accept all");
+    expect(restAccept.transform).toBe("none");
+
+    /** Hover, then wait for the 150ms transition to settle before reading. */
+    const hoverAndSettle = async (name: string) => {
+      await page.getByRole("button", { name, exact: true }).hover();
+      await expect
+        .poll(async () => (await read(name)).border, {
+          message: `${name} should settle on the brand red`,
+        })
+        .toBe("rgb(255, 0, 0)");
+      return read(name);
+    };
+
+    const settled: Record<string, Awaited<ReturnType<typeof read>>> = {};
+    for (const name of ["Accept all", "Reject all"]) {
+      const hovered = await hoverAndSettle(name);
+      settled[name] = hovered;
+
+      // Three signals move, not one.
+      expect(hovered.transform, `${name} should lift 1px`).toBe(
+        "matrix(1, 0, 0, 1, 0, -1)",
+      );
+      expect(hovered.bg, `${name} background should lift off the surface`).not.toBe(
+        restAccept.bg,
+      );
+    }
+
+    // And the two are the same state, which is the point.
+    expect(settled["Reject all"]).toEqual(settled["Accept all"]);
+  });
+
   test("the footer link is the way back once the banner is gone", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "Accept all" }).click();

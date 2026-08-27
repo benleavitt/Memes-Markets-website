@@ -114,6 +114,13 @@ const LINK =
  * One button, used for both answers. Sharing the component is the cheapest way
  * to keep the promise in the header comment true: the two cannot drift apart
  * visually without someone deliberately taking them apart.
+ *
+ * Also used by components/ConsentSettings.tsx for its three buttons, so the
+ * dialog and the banner answer the same way to the same gesture.
+ *
+ * Colours and states live in .mm-consent-action in app/globals.css rather than
+ * here: the hover moves three properties and needs a reduced-motion guard, which
+ * is past the point where inline utilities read well. Only layout stays here.
  */
 export function ConsentAction({
   onClick,
@@ -126,12 +133,7 @@ export function ConsentAction({
     <button
       type="button"
       onClick={onClick}
-      className="type-label-lg cursor-pointer rounded-[10px] border px-6 py-2.5 uppercase transition-colors duration-150 hover:border-[var(--mm-accent)] sm:min-w-[132px]"
-      style={{
-        background: "var(--mm-surface-raised)",
-        borderColor: "var(--mm-border)",
-        color: "var(--mm-text)",
-      }}
+      className="mm-consent-action type-label-lg cursor-pointer rounded-[10px] border px-6 py-2.5 uppercase sm:min-w-[132px]"
     >
       {children}
     </button>

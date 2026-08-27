@@ -611,6 +611,58 @@
   color: var(--mm-text-on-accent);
 }
 
+/*
+ * The consent answers: Accept all, Reject all, and Save choices in the dialog.
+ *
+ * BOTH ANSWERS GET THE SAME STATE, ALWAYS. One class for one shared component,
+ * for the reason given on ConsentAction in components/ConsentBanner.tsx: an
+ * Accept that is warmer or livelier than Reject is the standard consent dark
+ * pattern, and it is easy to introduce by accident once the two are styled
+ * separately. They are not styled separately.
+ *
+ * This replaces a lone `hover:border-[var(--mm-accent)]`. That was the right
+ * intent and invisible in practice — a 1px border moving from 10% white to red,
+ * on a dark surface, at the bottom edge of the viewport. The buttons read as not
+ * responding at all. Three signals now move together: the border, a lift off the
+ * surface, and a 1px rise, which is the one that makes it feel like a button.
+ *
+ * NOT a red fill. Red means live on this site, and two large red buttons at the
+ * bottom of every first visit reads as an alert rather than a choice.
+ *
+ * The lift is derived with color-mix rather than added to styles/tokens.css,
+ * which is generated from Figma and must not be hand-edited.
+ */
+.mm-consent-action {
+  background: var(--mm-surface-raised);
+  border-color: var(--mm-border);
+  color: var(--mm-text);
+  transition: background-color 150ms, border-color 150ms, transform 150ms;
+}
+/* Focus gets the hover state rather than a quieter version of it — same note as
+   the :focus-visible rule at the top of this file. */
+.mm-consent-action:hover,
+.mm-consent-action:focus-visible {
+  background: color-mix(in oklab, var(--mm-surface-raised), #fff 8%);
+  border-color: var(--mm-accent);
+  transform: translateY(-1px);
+}
+/* Pressed sits back down, so the click has somewhere to go. */
+.mm-consent-action:active {
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mm-consent-action {
+    transition: background-color 150ms, border-color 150ms;
+  }
+  .mm-consent-action:hover,
+  .mm-consent-action:focus-visible,
+  .mm-consent-action:active {
+    /* The colours still answer; only the movement goes. */
+    transform: none;
+  }
+}
+
 /* The one primary CTA. 19px/700 is load-bearing: white on --mm-accent is 4.0:1,
    which only passes as "large text". Shrinking it needs --mm-accent-deep. */
 .mm-cta {
