@@ -656,6 +656,61 @@ test.describe("cookie consent", () => {
     ]);
   });
 
+  /**
+   * The tag reports one page_view, at load. Everything after it is a next/link,
+   * so without components/AnalyticsPageViews.tsx a whole session would arrive in
+   * GA4 as a single landing page — and /about, /partner, /privacy and /terms
+   * would read as pages nobody visits, which is indistinguishable in the reports
+   * from a site nobody explores.
+   *
+   * ASSERTS ON THE CONSOLE, not on dataLayer, because the suite runs against
+   * `next dev` and lib/analytics.ts deliberately short-circuits to console.debug
+   * outside production so a development session cannot reach the real property.
+   * That makes the gtag call itself unobservable here. What IS observable is the
+   * thing that actually regresses — whether a route change reports at all — and
+   * that the landing page is not reported twice.
+   *
+   * It lives in this describe for the googletagmanager stub in its beforeEach.
+   * Consent is irrelevant: Consent Mode decides what Google does with a hit, not
+   * whether we report one.
+   */
+  test("a client-side navigation reports a page view, and the landing page is not double counted", async ({
+    page,
+  }) => {
+    const views: string[] = [];
+    page.on("console", (msg) => {
+      const text = msg.text();
+      if (text.includes("[analytics] page_view")) views.push(text);
+    });
+
+    await page.goto("/");
+    await expect(page.getByRole("complementary", { name: "Cookies" })).toBeVisible();
+
+    // The tag already counted this one. Reporting it here would double it, and a
+    // doubled number looks plausible enough that nobody goes looking.
+    expect(views).toEqual([]);
+
+    await page
+      .getByRole("contentinfo")
+      .getByRole("link", { name: "Privacy" })
+      .first()
+      .click();
+    await expect(page).toHaveURL(/\/privacy$/);
+
+    await expect.poll(() => views.length).toBe(1);
+    expect(views[0]).toContain("/privacy");
+
+    // And again, to prove it is every navigation rather than just the first.
+    await page
+      .getByRole("contentinfo")
+      .getByRole("link", { name: "Terms" })
+      .first()
+      .click();
+    await expect(page).toHaveURL(/\/terms$/);
+    await expect.poll(() => views.length).toBe(2);
+    expect(views[1]).toContain("/terms");
+  });
+
   test("the footer link is the way back once the banner is gone", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "Accept all" }).click();

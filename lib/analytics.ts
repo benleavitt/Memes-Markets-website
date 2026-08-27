@@ -43,3 +43,38 @@ export function track(event: AnalyticsEvent, props?: Props): void {
 
   window.gtag?.("event", event, props ?? {});
 }
+
+/**
+ * A page view for a navigation the browser never made.
+ *
+ * `gtag('config', ...)` in components/Analytics.tsx sends exactly ONE page_view,
+ * when the tag first loads. That is the right behaviour for a site where every
+ * navigation is a document request, and the wrong behaviour for this one: the
+ * footer links to /about, /partner, /privacy and /terms are next/link, so the
+ * App Router swaps the page slot without a page load and Google never hears
+ * about it. Left alone, GA4 would report a session as one landing page and
+ * nothing else, and the four subpages would look like almost nobody visits them
+ * — indistinguishable, in the reports, from a site nobody explores.
+ *
+ * Deliberately NOT part of AnalyticsEvent. That union is user intent — things a
+ * person chose to do — and page_view is a lifecycle fact. Keeping them apart
+ * stops "did anyone click Partner" and "did anyone land on /partner" turning
+ * into the same question.
+ *
+ * The dev-mode branch mirrors track() so both behave the same way locally.
+ */
+export function trackPageView(): void {
+  if (typeof window === "undefined") return;
+
+  if (process.env.NODE_ENV === "development") {
+    console.debug("[analytics] page_view", window.location.pathname);
+    return;
+  }
+
+  // GA4's own parameter names. Both have to be sent explicitly: the values
+  // captured at `config` time describe the landing page and are stale by now.
+  window.gtag?.("event", "page_view", {
+    page_location: window.location.href,
+    page_title: document.title,
+  });
+}
