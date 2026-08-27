@@ -1,5 +1,6 @@
 import { Analytics } from "@/components/Analytics";
 import { AnalyticsDelegate } from "@/components/AnalyticsDelegate";
+import { AnalyticsPageViews } from "@/components/AnalyticsPageViews";
 import { ConsentBanner } from "@/components/ConsentBanner";
 import { ConsentSettings } from "@/components/ConsentSettings";
 import { Footer } from "@/components/Footer";
@@ -107,6 +108,8 @@ export const metadata: Metadata = {
  *     <ConsentSettings/> the categories dialog, opened from the banner or the
  *                     footer link. Outlives the banner: it is how a decided
  *                     visitor changes their mind.
+ *     <AnalyticsPageViews/> reports client-side route changes, which the tag
+ *                     itself does not see
  *     <Analytics/>    GA4, and nothing at all without a measurement id
  *   </body>
  */
@@ -140,6 +143,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             it works long after the banner is gone. Still gated on the id, for
             the same reason the banner is — there is nothing to configure. */}
         {gaId && <ConsentSettings />}
+        {/* The tag reports the landing page and nothing after it. Every footer
+            link is a next/link, so without this the four subpages would look
+            almost unvisited. See lib/analytics.ts. */}
+        {gaId && <AnalyticsPageViews />}
         <Analytics gaId={gaId} />
       </body>
     </html>
