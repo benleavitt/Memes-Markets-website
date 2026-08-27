@@ -11,6 +11,25 @@ import { getRecentPosts } from "@/lib/newsletter-posts";
 import { ORBIT } from "@/lib/orbit";
 import { JsonLd, podcastSeriesSchema } from "@/lib/schema";
 import { getChannelStats } from "@/lib/stats";
+import type { Metadata } from "next";
+
+/**
+ * The homepage's canonical, stated absolutely.
+ *
+ * app/layout.tsx sets `canonical: "./"` so every route declares itself, which is
+ * right for /about, /partner, /privacy and /terms and WRONG here. Next resolves
+ * the relative form against the route's internal name, and the root route's is
+ * `/index` — so the homepage shipped `<link rel="canonical" href=".../index">`,
+ * and `/index` answers 200 with the same page. The most important URL on the site
+ * was pointing its ranking signals at an address nothing links to.
+ *
+ * A literal "/" resolves against metadataBase instead of the route, which fixes
+ * both halves: `/` claims itself, and `/index` now also points at `/` rather than
+ * at itself, so the duplicate consolidates the right way.
+ */
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 /**
  * Home. No nav bar — the wordmark is the header (tbpn.com model).

@@ -566,6 +566,49 @@ test.describe("navigation", () => {
  * and letting it load would make the suite depend on their CDN and on a real
  * measurement id existing.
  */
+/**
+ * Canonical URLs.
+ *
+ * app/layout.tsx sets `canonical: "./"` so each route declares itself, and that
+ * is right for every route except the one that matters most. Next resolves the
+ * relative form against the route's INTERNAL name, and the root route's is
+ * `/index` — so the homepage shipped `rel="canonical"` pointing at `.../index`,
+ * an address nothing links to, while `/index` answered 200 with the same page and
+ * canonicalised to itself. The homepage was donating its ranking signals to a URL
+ * that only existed by accident.
+ *
+ * Nothing on the page looks wrong when this breaks, which is why it survived to
+ * production and why it is worth a test rather than a comment.
+ */
+test.describe("seo", () => {
+  test("every route is its own canonical, and the homepage is not /index", async ({
+    page,
+  }) => {
+    for (const path of ["/", "/about", "/partner", "/privacy", "/terms"]) {
+      await page.goto(path);
+      const canonical = await page
+        .locator('link[rel="canonical"]')
+        .first()
+        .getAttribute("href");
+
+      expect(canonical, `${path} should declare a canonical`).toBeTruthy();
+      expect(canonical, "no route may canonicalise to /index").not.toMatch(/\/index$/);
+
+      const declared = new URL(canonical ?? "").pathname.replace(/\/$/, "");
+      expect(declared, `${path} should point at itself`).toBe(path.replace(/\/$/, ""));
+    }
+  });
+
+  test("/index redirects to the homepage rather than duplicating it", async ({
+    page,
+  }) => {
+    const response = await page.goto("/index");
+    expect(new URL(page.url()).pathname).toBe("/");
+    // Followed a redirect rather than being served in place.
+    expect(response?.request().redirectedFrom()).not.toBeNull();
+  });
+});
+
 test.describe("cookie consent", () => {
   /**
    * `dataLayer` is cast rather than imported. types/gtag.d.ts declares it for the
