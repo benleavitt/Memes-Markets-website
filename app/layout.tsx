@@ -63,8 +63,8 @@ export const metadata: Metadata = {
    * under two hosts competes with itself and splits its own ranking — the exact
    * problem DEPLOY.md already documents for staging.
    *
-   * Query strings drop out, which is what we want: /subscribed?state=ok and
-   * ?state=invalid are one page, and it carries robots:noindex anyway.
+   * Query strings drop out, which is what we want: a page is one page however
+   * it was reached.
    */
   alternates: { canonical: "./" },
   openGraph: {
@@ -83,15 +83,23 @@ export const metadata: Metadata = {
     description: `${POSITIONING}. ${SCHEDULE}.`,
   },
   /**
-   * Google Search Console's meta-tag verification, when a token is configured.
+   * Google Search Console's meta-tag verification.
    *
-   * Next drops the tag entirely when the value is undefined, so an unconfigured
-   * site ships no empty verification tag. The DNS TXT route is the alternative
-   * and needs nothing here — it also survives a change of host, which this does
-   * not, so it is the better option if the domain is under your control.
+   * The token is committed rather than left to an environment variable, and that
+   * is safe: it is served in the HTML of every page to anyone who asks, so it is
+   * public by construction. It proves nothing on its own — it only matches a
+   * property somebody already added in Search Console, so it is worthless to
+   * anyone else. Committing it means verification survives a redeploy, a new
+   * environment, and anybody forgetting to copy a variable across.
+   *
+   * NEXT_PUBLIC_GSC_VERIFICATION still overrides it, for a second property or a
+   * re-verification, and DNS TXT remains the better route if the domain is yours
+   * to edit — that one survives a change of host, which this does not.
    */
   verification: {
-    google: process.env.NEXT_PUBLIC_GSC_VERIFICATION || undefined,
+    google:
+      process.env.NEXT_PUBLIC_GSC_VERIFICATION ??
+      "tuYQ_8raooXxCEJf3HuF-kBcDQtENWAv9r7lEpfY3YI",
   },
 };
 

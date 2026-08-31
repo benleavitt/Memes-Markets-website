@@ -62,8 +62,17 @@ export const PLATFORMS: Platform[] = [
   {
     id: "substack",
     label: "Substack",
-    handle: "memesandmarkets.com",
-    href: "https://memesandmarkets.com",
+    /**
+     * The profile, not the publication's own address.
+     *
+     * This used to be https://memesandmarkets.com, which was right while the
+     * Substack owned that domain and became a loop the day the site took it
+     * over: the Substack icon in the footer pointed at the page it was sitting
+     * on. substack.com/@… is the show's profile and cannot collide with the
+     * marketing site whatever happens to the custom domain.
+     */
+    handle: "@memesandmarketspod",
+    href: "https://substack.com/@memesandmarketspod",
   },
 ];
 

@@ -1,10 +1,11 @@
 import { LiveCta } from "@/components/ui/LiveCta";
-import { NewsletterForm } from "@/components/ui/NewsletterForm";
+import { NewsletterCta } from "@/components/ui/NewsletterCta";
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
 import { HOST_LIST } from "@/content/hosts";
 import { PLATFORMS } from "@/content/platforms";
 import { PRESS_ITEMS, type PressItem } from "@/content/press";
 import Image from "next/image";
+import Link from "next/link";
 
 /**
  * Everything inside the More info panel. Split out from the dialog shell so the
@@ -91,7 +92,7 @@ export function InfoPanelContent() {
             <p className="type-body-md" style={{ color: "var(--mm-text-2)" }}>
               What actually moved, twice a week, in the time it takes to finish a coffee.
             </p>
-            <NewsletterForm />
+            <NewsletterCta block />
           </div>
         </div>
       </section>
@@ -109,6 +110,34 @@ export function InfoPanelContent() {
           </p>
           {/* The live route did not disappear with the old hero CTA, it moved here. */}
           <LiveCta />
+          {/*
+            The panel is where someone works out what the show IS, which makes it
+            the moment a sponsor decides whether to ask — and the only route to
+            /partner used to be the footer, past the whole page and behind a
+            closed dialog. next/link so it is a client navigation; the dialog
+            unmounts with the page and MoreInfo's cleanup releases the scroll lock.
+          */}
+          <Link
+            href="/partner"
+            data-analytics="cta_partner"
+            data-analytics-surface="info_panel"
+            className="type-label-lg inline-flex items-center gap-2 uppercase underline decoration-[var(--mm-border-strong)] underline-offset-4 transition-colors duration-150 hover:decoration-[var(--mm-accent)]"
+            style={{ color: "var(--mm-text)" }}
+          >
+            Partner with us
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 16 16"
+              className="size-3 shrink-0"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M3 8h9M8.5 4l4 4-4 4" />
+            </svg>
+          </Link>
         </div>
         <ul className="flex flex-wrap items-center gap-2">
           {PLATFORMS.map((p) => (

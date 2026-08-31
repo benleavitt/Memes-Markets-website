@@ -1,4 +1,4 @@
-import { PUBLICATION } from "./newsletter";
+import { PUBLICATION, redirectedAwayFrom } from "./newsletter";
 import { type Post, feedUrl, isFresh, parsePosts } from "./posts";
 
 /**
@@ -22,6 +22,16 @@ export async function getRecentPosts(limit = 3): Promise<Post[]> {
       // Same hourly window as the episodes and the channel stats.
       next: { revalidate: 3600 },
     });
+    // Same fault as the signup route, and this one is even quieter: every
+    // failure here collapses to "render nothing", so a publication pointing at
+    // a domain it no longer owns looks exactly like a newsletter that has not
+    // posted lately. One line so it is at least findable in the logs.
+    if (redirectedAwayFrom(feedUrl(PUBLICATION), res.url)) {
+      console.error(
+        `[posts] MISCONFIGURED: the feed redirected to ${new URL(res.url).host}, which is not Substack. Fix the publication's custom domain in Substack > Settings > Domain.`,
+      );
+      return [];
+    }
     if (!res.ok) return [];
 
     const posts = parsePosts(await res.text());

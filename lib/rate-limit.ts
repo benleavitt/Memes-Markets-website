@@ -1,10 +1,11 @@
 /**
  * A fixed-window request limiter.
  *
- * Built for /api/subscribe, which is the one route on this site that causes a
- * side effect somewhere else — it puts an address on a mailing list. Before this
- * it had no limit at all, and the honeypot was the only thing in the way, which a
- * script defeats by simply not sending the field it is hiding from.
+ * Built for the two routes on this site that cause a side effect somewhere
+ * else. /api/subscribe was the first — it has since been removed, because
+ * Cloudflare blocks server-side calls to Substack — and /api/partner is the one
+ * that remains, writing an enquiry into a Google Sheet. A honeypot alone is thin
+ * cover there: a script defeats it by not sending the field it is hiding from.
  *
  * WHAT THIS IS AND IS NOT. The counters live in module scope, so on Vercel they
  * are per-isolate: a caller spread across several edge locations gets several

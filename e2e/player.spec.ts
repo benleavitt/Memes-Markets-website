@@ -434,30 +434,37 @@ test.describe("home", () => {
   });
 
   /**
-   * Deliberately only exercises the address the route rejects locally, so the
-   * suite never posts to Substack. Everything up to that point — the form, the
-   * fetch, the route, the error rendering — is the same code path a real signup
-   * takes; only the upstream call is skipped.
+   * The newsletter signup.
+   *
+   * There was a form here once, posting to /api/subscribe, which proxied to
+   * Substack. That is gone and is not coming back in that shape: Substack has no
+   * supported API for adding a subscriber, and the undocumented endpoint behind
+   * their embed sits behind Cloudflare bot management, which blocks every
+   * server-side POST. A framed embed and a collect-then-import sheet were both
+   * built and both rejected — the first took the site's design with it, the
+   * second put a standing manual chore on somebody twice a week.
+   *
+   * So the assertion is deliberately small: the block sends people somewhere real
+   * and off-site. The failure it guards against is a signup that looks available
+   * and quietly goes nowhere, which is what every version of this has done.
    */
-  test("the newsletter box reports a bad address without leaving the page", async ({
-    page,
-  }) => {
+  test("the newsletter block links out to Substack", async ({ page }) => {
     await page.goto("/");
 
-    const form = page.locator("footer form");
-    await form.scrollIntoViewIfNeeded();
-    await expect(form.getByRole("button", { name: "Subscribe" })).toBeVisible();
+    const cta = page
+      .locator("footer")
+      .getByRole("link", { name: /subscribe on substack/i });
+    await cta.scrollIntoViewIfNeeded();
+    await expect(cta).toBeVisible();
 
-    await form.getByPlaceholder("name@email.com").fill("definitely-not-an-email");
-    await form.getByRole("button", { name: "Subscribe" }).click();
+    // Off-site, and to the profile rather than the custom domain the site now
+    // occupies — pointing it at memesandmarkets.com would be a link to this page.
+    await expect(cta).toHaveAttribute("href", /^https:\/\/substack\.com\/@/);
+    await expect(cta).toHaveAttribute("target", "_blank");
+    await expect(cta).toHaveAttribute("rel", /noopener/);
 
-    await expect(form.getByText(/does not look like an email/i)).toBeVisible();
-    // Still on the homepage: the fetch answered in place rather than navigating.
-    await expect(page).toHaveURL(/localhost:3000\/$/);
-    await expect(form.getByPlaceholder("name@email.com")).toHaveAttribute(
-      "aria-invalid",
-      "true",
-    );
+    // No form left behind to half-work.
+    await expect(page.locator("footer form")).toHaveCount(0);
   });
 
   test("does not scroll sideways at 390px", async ({ page }) => {
@@ -606,6 +613,41 @@ test.describe("seo", () => {
     expect(new URL(page.url()).pathname).toBe("/");
     // Followed a redirect rather than being served in place.
     expect(response?.request().redirectedFrom()).not.toBeNull();
+  });
+});
+
+/**
+ * The route from the info panel to the partnership page.
+ *
+ * The panel is where somebody works out what the show is, which is the moment a
+ * sponsor decides whether to ask — and the only way there used to be the footer,
+ * past the whole page and behind a dialog they would have to close first.
+ *
+ * The subtle part is not the link, it is the exit. MoreInfo locks the document
+ * scroll while the dialog is up and releases it in an effect cleanup. Navigating
+ * away from inside the dialog is the one path where that cleanup has to fire on
+ * unmount rather than on a `close` event, and if it does not, the visitor lands
+ * on /partner unable to scroll — a page that looks fine and simply will not move.
+ */
+test.describe("partner route", () => {
+  test("the info panel leads to /partner, and the page scrolls when it gets there", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "More info" }).click();
+
+    const panel = page.locator("dialog.mm-panel");
+    await expect(panel).toBeVisible();
+    await expect(page.locator("html")).toHaveCSS("overflow", "hidden");
+
+    await panel.getByRole("link", { name: /partner with us/i }).click();
+
+    await expect(page).toHaveURL(/\/partner$/);
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+
+    // The scroll lock came off with the dialog.
+    await expect(page.locator("html")).not.toHaveCSS("overflow", "hidden");
+    await expect(panel).toHaveCount(0);
   });
 });
 

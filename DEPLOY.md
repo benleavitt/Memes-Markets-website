@@ -16,7 +16,7 @@ scratch branch does not spend build minutes.
 ## First-time setup
 
 1. **Import the repo.** vercel.com → Add New → Project → import
-   `Ochanda-Charles/Memes-Markets-website`. Framework is detected as Next.js;
+   `benleavitt/Memes-Markets-website`. Framework is detected as Next.js;
    accept every default. The first build publishes Production from `main`.
 2. **Confirm the production branch** is `main` under
    Settings → Git → Production Branch.
@@ -108,7 +108,7 @@ secret** with exactly that name.
 Fastest route, with the `gh` CLI already authenticated:
 
 ```bash
-gh secret set YOUTUBE_API_KEY --repo Ochanda-Charles/Memes-Markets-website
+gh secret set YOUTUBE_API_KEY --repo benleavitt/Memes-Markets-website
 ```
 
 It prompts for the value and reads it from stdin, so the key never lands in your
@@ -117,7 +117,7 @@ shell history. Do NOT pass it as `--body` on the command line for that reason.
 Through the web UI instead:
 
 1. Open
-   `https://github.com/Ochanda-Charles/Memes-Markets-website/settings/secrets/actions`
+   `https://github.com/benleavitt/Memes-Markets-website/settings/secrets/actions`
    (or: repo → **Settings** → **Secrets and variables** → **Actions**).
 2. Click **New repository secret**.
 3. **Name:** `YOUTUBE_API_KEY` — exact, case-sensitive.
@@ -173,26 +173,73 @@ exactly why the secret exists. Editing the script later creates a *new* `/exec`
 URL unless you edit the existing deployment under **Manage deployments**; if
 enquiries stop arriving after a change, check that first.
 
-## Adding the domain later
+## The domain
 
-The site does not hardcode its own URL anywhere. `lib/site.ts` resolves it, and
-everything that needs an absolute URL — `metadataBase`, OG images, JSON-LD, the
-sitemap — goes through that one function. So:
+The site is live on **https://www.memesandmarkets.com**.
 
-1. Buy the domain and add it in Vercel → Settings → Domains.
-2. Set `NEXT_PUBLIC_SITE_URL` to it, **Production environment only**
-   (e.g. `https://memesandmarkets.tv`).
-3. Redeploy Production.
+Nothing hardcodes that. `lib/site.ts` resolves the site's own URL and everything
+needing an absolute one — `metadataBase`, OG images, JSON-LD, the sitemap, the
+canonical tags — goes through that single function.
 
-Until step 2, production correctly advertises its own `.vercel.app` address.
-There is nothing to find and edit.
+### Outstanding: set `NEXT_PUBLIC_SITE_URL`
 
-> **Note on `memesandmarkets.com`.** That domain currently serves the Substack,
-> and the site's metadata used to claim it as its own canonical URL — which was
-> wrong, and is why this now resolves at runtime. If you want the site on the
-> apex, the newsletter needs to move first (usually to a `newsletter.` or `mail.`
-> subdomain), and `SUBSTACK_PUBLICATION_URL` must then be updated to match or
-> newsletter signups will break.
+**Until this is set, the site is serving on the custom domain while telling
+Google its canonical address is the `.vercel.app` one.** `siteUrl()` prefers
+`NEXT_PUBLIC_SITE_URL`; with it unset the next fallback is
+`VERCEL_PROJECT_PRODUCTION_URL`, which is still the vercel.app host. The result
+is a canonical tag, a sitemap and a robots `Sitemap:` line that all point away
+from the real domain — so ranking signals consolidate onto the wrong address.
+
+1. Vercel → Settings → Environment Variables.
+2. `NEXT_PUBLIC_SITE_URL` = `https://www.memesandmarkets.com`, **Production only**.
+3. **Redeploy Production** — `NEXT_PUBLIC_*` is inlined at build time, so the
+   running deployment keeps the old value until it is rebuilt.
+
+Verify with:
+
+```
+curl -s https://www.memesandmarkets.com/ | grep canonical
+curl -s https://www.memesandmarkets.com/sitemap.xml | head
+```
+
+Both should say `www.memesandmarkets.com`.
+
+### Outstanding: the Substack still owns this domain
+
+The newsletter took `memesandmarkets.com` first, and the site has now taken it
+over. Substack's own API confirms the publication is still configured for it:
+
+```
+subdomain              = memesandmarketspod
+custom_domain          = www.memesandmarkets.com
+custom_domain_optional = False
+```
+
+`custom_domain_optional = False` is the part that bites — Substack *enforces* that
+domain, and the domain is now this site. The two calls fail differently, which is
+worth knowing because the obvious guess is wrong:
+
+- **The feed** (`GET /feed`) 301s to `www.memesandmarkets.com/feed`, which Next
+  answers with a 404.
+- **The signup** (`POST /api/v1/free`) does **not** redirect. Substack answers
+  **403** with its own "Error - Substack" HTML page, whatever headers are sent.
+
+Both were verified against the live publication.
+
+So, today: **newsletter signups do not work, and the posts strip renders
+nothing.** Neither failure is loud. The form shows a polite error and the strip
+is designed to disappear when the feed is quiet.
+
+The fix is in Substack's settings, not in this repo:
+
+1. Substack → Settings → Domain. Remove `www.memesandmarkets.com`, or repoint the
+   publication at a subdomain such as `newsletter.memesandmarkets.com`.
+2. Once `memesandmarketspod.substack.com` stops redirecting, the code already
+   points at it — `PUBLICATION` in `lib/newsletter.ts` defaults there. Nothing
+   needs changing unless you chose a subdomain, in which case set
+   `SUBSTACK_PUBLICATION_URL` to it.
+3. Verify: `curl -sI https://memesandmarketspod.substack.com/feed` should return
+   200 rather than a 301, and the footer signup box should accept an address.
 
 ## Why staging is not indexed
 

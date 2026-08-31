@@ -13,7 +13,7 @@ export const metadata: Metadata = {
  * WHAT THIS PAGE IS AND IS NOT.
  *
  * Every claim below was written from the code rather than from a template: the
- * two forms are app/api/subscribe and app/api/partner, the storage keys are the
+ * the one form is app/api/partner, the storage keys are the
  * two in lib/consent.ts and components/player/LivePlayer.tsx, and the third
  * parties are the hosts the CSP in next.config.ts actually permits. If any of
  * that changes, this page is wrong until somebody changes it too — which is the
@@ -30,23 +30,22 @@ export default function Privacy() {
     <LegalPage eyebrow="Privacy" title="What we collect" updated="2026-08-17">
       <LegalSection id="p-short" heading="The short version">
         <p>
-          Two forms on this site collect anything: the newsletter box and the partnership
-          enquiry form. Nothing else asks you for information, and nothing on the page
-          tracks you unless you agree to it first.
+          One form on this site collects anything: the partnership enquiry form.
+          Subscribing to the newsletter is a link to Substack, so an address typed there
+          is typed on their site and never reaches us. Nothing else asks you for
+          information, and nothing on the page tracks you unless you agree to it first.
         </p>
       </LegalSection>
 
       <LegalSection id="p-newsletter" heading="The newsletter">
         <p>
-          Subscribing sends your email address to Substack, who run the newsletter and
-          become its custodian. This site passes the address through and keeps no copy of
-          it — it is never written to a database, never written to a log, and never sent
-          anywhere else.
+          There is no signup box on this site — the newsletter link takes you to Substack,
+          and everything after that happens on their site under their privacy policy. We
+          never see the address, so there is nothing here to store, log or pass on.
         </p>
         <p>
-          What Substack does with it is governed by their privacy policy. You can
-          unsubscribe from any email they send you, which removes you from their list
-          without needing to ask us.
+          Following that link tells Substack you came from here, in the way any link
+          between two sites does.
         </p>
       </LegalSection>
 
