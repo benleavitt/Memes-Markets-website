@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
  * PARTNER_SHEET_WEBHOOK. That URL is a public write endpoint — anyone holding it
  * can append rows — so it never reaches the browser. See lib/partner.ts.
  *
- * Guards, in the order they run, matching /api/subscribe:
+ * Guards, in the order they run:
  *
  *   1. rate limit    per caller, before anything is read
  *   2. origin check  a page on another domain cannot post here
@@ -37,7 +37,7 @@ function json(status: number, body: Record<string, unknown>, headers?: HeadersIn
   });
 }
 
-/** Identical reasoning to /api/subscribe: a missing Origin is allowed through. */
+/** A missing Origin is allowed through: non-browser clients omit it. */
 function sameOrigin(request: Request): boolean {
   const origin = request.headers.get("origin");
   if (!origin) return true;
@@ -107,7 +107,7 @@ export async function POST(request: Request) {
       headers: { "content-type": "application/json" },
       // The secret travels in the body, not a header: Apps Script drops custom
       // request headers across the 302 it answers with, so a header-based check
-      // would reject every genuine write. See scripts/partner-sheet.gs.
+      // would reject every genuine write. See scripts/sheet-webhook.gs.
       body: JSON.stringify({
         ...checked.enquiry,
         secret: process.env.PARTNER_SHEET_SECRET ?? "",

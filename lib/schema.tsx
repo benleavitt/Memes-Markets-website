@@ -31,6 +31,9 @@ export function podcastSeriesSchema(episodes: Episode[]) {
       "https://www.instagram.com/memesandmkts",
       "https://open.spotify.com/show/1GSfFx3sQoG2bYAbIYUocN",
       "https://podcasts.apple.com/us/podcast/memes-and-markets/id1840280923",
+      // The profile rather than the publication's custom domain, which is now
+      // this site. See the note on PUBLICATION in lib/newsletter.ts.
+      "https://substack.com/@memesandmarketspod",
     ],
     hasPart: episodes.map((e) => ({
       "@type": "PodcastEpisode",

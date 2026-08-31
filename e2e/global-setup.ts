@@ -26,15 +26,9 @@ const ROUTES = [
   "/privacy",
   "/terms",
   "/subscribed",
-  // The API routes matter as much as the pages, and are easier to forget. The
-  // newsletter spec fills the form, submits, and asserts on the message that
-  // comes back — and an uncompiled /api/subscribe left the button sitting on
-  // "Sending…" well past the 5s the assertion allows. The failure named the
-  // message, not the route, so it read as a broken form.
-  //
-  // GET is deliberate: /api/subscribe only answers POST, so this returns 405 —
-  // but the module is compiled either way, which is the whole point, and a GET
-  // cannot put an address anywhere near Substack.
+  // The API routes matter as much as the pages, and are easier to forget: an
+  // uncompiled route pays its build cost inside whichever assertion reaches it
+  // first, and the failure names the assertion rather than the route.
   "/api/live-status",
   "/api/subscribe",
 ];
@@ -54,7 +48,7 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
         const res = await fetch(url);
         // ANY answer means the route compiled and the server is up, which is all
         // this step is asking. Retrying until a route returns 2xx would spin for
-        // a full minute on /api/subscribe, which correctly answers 405 to a GET.
+        // a full minute on a POST-only route answering 405 to a GET.
         // Drained on purpose: the response is streamed, and abandoning it can
         // leave the compile unfinished, which defeats the point of warming.
         await res.text();

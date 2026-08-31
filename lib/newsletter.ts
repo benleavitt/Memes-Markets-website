@@ -1,46 +1,39 @@
 /**
- * Substack subscription.
+ * The newsletter: where the publication lives, and where a signup is recorded.
  *
- * The publication is a Substack on a custom domain, so its subscribe endpoint
- * lives at <publication>/api/v1/free — the same call the official embed makes.
+ * THE SIGNUP DOES NOT GO TO SUBSTACK. It cannot: Substack has no supported API
+ * for adding a subscriber, and the undocumented endpoint behind its embed now
+ * sits behind Cloudflare bot management, which blocks every server-side POST.
+ * That was measured rather than assumed — the identical request succeeds from a
+ * browser and fails from any server, on any publication, whatever headers are
+ * sent, including on a publication with no custom domain at all.
  *
- * WHY THIS IS PROXIED THROUGH OUR OWN ROUTE rather than posted from the browser:
- * the endpoint sends no Access-Control-Allow-Origin, so a fetch from the page is
- * blocked outright. The alternatives were a Substack <iframe>, which cannot be
- * styled and drops a third-party frame on the homepage, or a plain form POST
- * straight to Substack, which navigates the visitor off the site. A server route
- * keeps the visitor here and lets the form answer in the brand's own voice.
+ * So addresses are written to a Google Sheet the show controls and imported into
+ * Substack in batches. See `subscribe` below, and scripts/sheet-webhook.gs.
  *
- * The endpoint is undocumented. It is what every Substack embed on the web calls,
- * so it is unlikely to vanish quietly, but it carries no compatibility promise —
- * if subscriptions ever start failing, `interpret` below is the first place to
- * look, and lib/newsletter.test.ts pins the shapes we currently understand.
+ * PUBLICATION is still needed: the recent-posts strip reads the publication's
+ * RSS feed, and the footer links to it.
  */
 
 /**
- * Override if the publication moves. Note the marketing site and the Substack
- * currently both claim memesandmarkets.com — see the note in the README of this
- * change; whichever wins, this constant is the only thing that needs to know.
+ * The publication's own Substack address.
+ *
+ * IT USED TO BE https://www.memesandmarkets.com, AND THAT BROKE THE DAY THE SITE
+ * MOVED ONTO THAT DOMAIN. The Substack and the marketing site both claimed it;
+ * the site won. Signups then POSTed to our own domain, where /api/v1/free is a
+ * 404, and the posts strip fetched /feed and got the same.
+ *
+ * The subdomain cannot be taken away by a DNS change, so it is the default now.
+ * It does not work yet either: the publication still has www.memesandmarkets.com
+ * set as an ENFORCED custom domain — Substack's own API reports
+ * custom_domain_optional: false — so the subdomain 301s here. Releasing it in
+ * Substack > Settings > Domain is a prerequisite for anything below working.
  */
 export const PUBLICATION =
-  process.env.SUBSTACK_PUBLICATION_URL ?? "https://www.memesandmarkets.com";
-
-export const SUBSCRIBE_ENDPOINT = `${PUBLICATION}/api/v1/free`;
+  process.env.SUBSTACK_PUBLICATION_URL ?? "https://memesandmarketspod.substack.com";
 
 export type SubscribeResult =
-  /**
-   * `requiresConfirmation` mirrors Substack's own `requires_confirmation`, and
-   * exists because this site spent its whole life telling people the opposite of
-   * the truth. A publication without double opt-in answers a signup with
-   * `{"didSignup":true,"requires_confirmation":false,...}` — the subscriber is
-   * live that instant and NO email is ever sent. Copy promising "check your
-   * inbox for a confirmation link" therefore describes an email that will never
-   * arrive, which reads exactly like a broken integration.
-   *
-   * Substack tells us which flow it used, so the copy follows the flag rather
-   * than a guess baked into a string.
-   */
-  | { ok: true; requiresConfirmation: boolean }
+  | { ok: true }
   /** `field` true means the address itself is the problem, so blame the input. */
   | { ok: false; message: string; field: boolean };
 
@@ -56,103 +49,90 @@ export function looksLikeEmail(value: string): boolean {
 }
 
 /**
- * Strip anything email-shaped out of a string before it reaches a log.
+ * Did the request end up somewhere that is not the publication?
  *
- * /api/subscribe is deliberate about never logging an address, but the one thing
- * it does log is Substack's own `msg` — third-party text, whose contents are not
- * this codebase's to promise anything about. The observed 400 bodies keep the
- * address in a separate `value` field that `interpret` already drops, so nothing
- * leaks today; this makes that true by construction instead of by observation.
- *
- * Deliberately looser than `looksLikeEmail`: that one decides whether to spend a
- * round trip and should not reject valid addresses, this one decides what reaches
- * a log and should over-match rather than miss one.
+ * Substack redirects its subdomain to whatever custom domain is configured, and
+ * this one's custom domain is now the marketing site — so a feed fetch lands on
+ * our own 404. Any substack.com host counts as arrival; being moved around their
+ * own estate is their business.
  */
-export function redactAddresses(text: string): string {
-  return text.replace(/[^\s@<>()[\]",;:]+@[^\s@<>()[\]",;:]+/g, "[address]");
-}
-
-interface SubstackError {
-  msg?: string;
-  param?: string;
+export function redirectedAwayFrom(requested: string, landed: string): boolean {
+  let asked: URL;
+  let arrived: URL;
+  try {
+    asked = new URL(requested);
+    arrived = new URL(landed);
+  } catch {
+    return false;
+  }
+  if (arrived.host === asked.host) return false;
+  return !(arrived.host === "substack.com" || arrived.host.endsWith(".substack.com"));
 }
 
 /**
- * Map a Substack response onto something the form can show. Pure and exported so
- * every branch is testable without touching the network.
+ * Record a subscriber.
+ *
+ * NOT a Substack signup, and the difference matters enough that the copy on the
+ * form says so. Substack has no supported API for adding a subscriber, and the
+ * undocumented endpoint its embed uses now sits behind Cloudflare bot
+ * management, which blocks every server-side POST — measured: the identical
+ * request succeeds from a browser and fails from any server, on any publication,
+ * whatever headers are sent.
+ *
+ * The alternatives were an iframe of Substack's own form, which was tried and
+ * dropped because a cross-origin frame takes all of the site's design with it,
+ * or a browser-side post we could not read the answer to. So the address is
+ * written to a sheet we control and imported into Substack in batches. It costs
+ * a manual step and buys a form that works, looks like the rest of the site, and
+ * does not depend on a third party's bot rules.
+ *
+ * Deliberately the same webhook and secret as the partnership form: one Apps
+ * Script deployment, two tabs, chosen by `list`. See scripts/sheet-webhook.gs.
  */
-export function interpret(status: number, body: unknown): SubscribeResult {
-  const errors = (body as { errors?: SubstackError[] } | null)?.errors;
-
-  if (Array.isArray(errors) && errors.length > 0) {
-    // Substack returns two errors for one bad address ("not a valid email" plus
-    // "could not validate your email domain"). Showing both reads as two separate
-    // faults, so take the first and treat it as a field-level problem.
-    const first = errors[0];
+export async function subscribe(email: string): Promise<SubscribeResult> {
+  const webhook = process.env.PARTNER_SHEET_WEBHOOK;
+  if (!webhook) {
+    // Not configured is a deployment mistake, not a visitor's problem. Loud in
+    // the logs, and honest on the page — the alternative is thanking somebody
+    // for an address that went nowhere.
+    console.error(
+      "[subscribe] PARTNER_SHEET_WEBHOOK is not set — the address was NOT recorded.",
+    );
     return {
       ok: false,
-      message: first?.msg ?? "That address was not accepted.",
-      field: first?.param === "email",
+      field: false,
+      message: "The signup box is not accepting addresses right now. Please try later.",
     };
   }
 
-  if (status >= 200 && status < 300) {
-    // Strictly `=== true`. A body that never mentions the field, or is not an
-    // object at all, means no confirmation step — which is the safer default:
-    // it tells the visitor they are subscribed rather than sending them looking
-    // for an email that is not coming.
-    const flag = (body as { requires_confirmation?: unknown } | null)
-      ?.requires_confirmation;
-    return { ok: true, requiresConfirmation: flag === true };
-  }
-
-  // Reached Substack, but it is unhappy for a reason it did not spell out. Not
-  // the visitor's fault, so do not point at the field.
-  return {
-    ok: false,
-    message: "Substack could not take that signup just now. Please try again.",
-    field: false,
-  };
-}
-
-/**
- * Sent so the publication owner can tell this traffic apart from the embed's in
- * Substack's logs, and so the request is not a UA-less POST from a datacentre —
- * which is the shape most likely to be quietly rate-limited. Same reasoning as
- * FEED_UA in lib/feed.ts.
- */
-export const SUBSCRIBE_UA = "memesandmarkets.com signup form";
-
-/** POST an address to Substack. Server-side only — see the CORS note above. */
-export async function subscribe(email: string): Promise<SubscribeResult> {
-  const res = await fetch(SUBSCRIBE_ENDPOINT, {
+  const res = await fetch(webhook, {
     method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "user-agent": SUBSCRIBE_UA,
-      // The endpoint is the embed's. Sending where the embed would say it came
-      // from keeps the request consistent with first_url/current_url below.
-      referer: PUBLICATION,
-      origin: PUBLICATION,
-    },
+    headers: { "content-type": "application/json" },
+    // The secret travels in the body, not a header: Apps Script drops custom
+    // request headers across the 302 it answers with, so a header-based check
+    // would reject every genuine write. See scripts/sheet-webhook.gs.
     body: JSON.stringify({
+      list: "subscribers",
       email,
-      first_url: PUBLICATION,
-      first_referrer: "",
-      current_url: PUBLICATION,
-      current_referrer: "",
-      referral_code: "",
-      // What the embed sends. Substack uses it for signup attribution.
-      source: "embed",
+      source: "website",
+      secret: process.env.PARTNER_SHEET_SECRET ?? "",
+      receivedAt: new Date().toISOString(),
     }),
+    // Apps Script answers a POST with a 302 to script.googleusercontent.com and
+    // the real body is behind it. Without following, every write looks like a
+    // failure and the visitor is told to try again on an address that landed.
+    redirect: "follow",
     cache: "no-store",
   });
 
-  let body: unknown = null;
-  try {
-    body = await res.json();
-  } catch {
-    // A non-JSON body is fine as long as the status was a success.
+  if (!res.ok) {
+    console.error(`[subscribe] the sheet webhook answered HTTP ${res.status}`);
+    return {
+      ok: false,
+      field: false,
+      message: "That did not save. Please try again.",
+    };
   }
-  return interpret(res.status, body);
+
+  return { ok: true };
 }

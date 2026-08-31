@@ -1,26 +1,23 @@
-import {
-  SUBSCRIBE_ENDPOINT,
-  looksLikeEmail,
-  redactAddresses,
-  subscribe,
-} from "@/lib/newsletter";
+import { looksLikeEmail, subscribe } from "@/lib/newsletter";
 import { clientKey, createRateLimiter } from "@/lib/rate-limit";
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 /**
- * Newsletter signup, proxied to Substack.
+ * Newsletter signup, recorded in a Google Sheet.
  *
- * Exists because Substack's subscribe endpoint sends no CORS headers, so the
- * browser cannot call it directly. See lib/newsletter.ts for the full reasoning.
+ * NOT sent to Substack — it cannot be. See lib/newsletter.ts for the measurement
+ * behind that. Addresses are collected here and imported into Substack in
+ * batches, which is why the form's success copy says "on the list" rather than
+ * "subscribed": the two are not the same thing yet, and saying otherwise would
+ * be the kind of confident lie this file has told before.
  *
  * Accepts JSON from the enhanced form, and urlencoded from a plain form POST so
  * the box still works with JavaScript off.
  *
- * This route puts an address into a third-party list, so it is worth being clear
- * about what it does NOT do: it never stores the email, never logs it, and never
- * echoes it back. It is a pass-through to Substack and nothing else.
+ * This route DOES store the address — that is now the point of it. What it does
+ * not do is log it or echo it back: the sheet is the only place it lands.
  *
  * WHAT GUARDS IT, in the order they run:
  *
@@ -160,37 +157,31 @@ export async function POST(request: Request) {
 
   try {
     const result = await subscribe(email);
-    // Substack refusing a signup is otherwise completely silent: the visitor sees
-    // a sentence under the field and nobody who could fix it ever hears. The
-    // message is Substack's own text, so it goes through redactAddresses first —
-    // this route is careful never to log an address, and that promise should not
-    // depend on what a third party chooses to put in a string.
+    // A refusal here is our own sheet failing, not a third party being fussy, so
+    // it is worth a log line: the visitor sees one sentence and nobody who could
+    // fix it would otherwise hear. `subscribe` logs the specific cause already.
     if (!result.ok) {
-      console.warn(
-        `[subscribe] Substack declined a signup (${result.field ? "address" : "other"}): ${redactAddresses(result.message)}`,
-      );
+      console.warn(`[subscribe] an address was not recorded: ${result.message}`);
     }
+
     if (wantsHtml) {
-      // Keep the no-JS wording honest about whose fault it was: Substack
-      // rejecting the address is not the same as Substack being unavailable.
-      if (result.ok) {
-        return redirect(request, result.requiresConfirmation ? "confirm" : "ok");
-      }
-      return redirect(request, result.field ? "invalid" : "error");
+      return redirect(request, result.ok ? "ok" : result.field ? "invalid" : "error");
     }
-    return json(result.ok ? 200 : 400, result);
+    return result.ok
+      ? json(200, { ok: true })
+      : json(400, { ok: false, message: result.message, field: result.field });
   } catch (err) {
     // Substack unreachable. Not the visitor's fault and not worth a stack trace
     // in their face — but it must not be invisible to us either.
     console.error(
-      `[subscribe] could not reach Substack at ${SUBSCRIBE_ENDPOINT}:`,
+      "[subscribe] could not reach the sheet webhook:",
       err instanceof Error ? err.message : err,
     );
     return wantsHtml
       ? redirect(request, "error")
       : json(502, {
           ok: false,
-          message: "Could not reach Substack just now. Please try again.",
+          message: "That did not save. Please try again.",
           field: false,
         });
   }

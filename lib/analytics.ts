@@ -22,6 +22,8 @@ export type AnalyticsEvent =
   | "cta_more_info"
   /** The live link inside that panel. */
   | "cta_watch_live"
+  /** The route from the info panel through to the partnership page. */
+  | "cta_partner"
   /** Did anyone touch the sphere, and how — drag, keyboard, or scroll. */
   | "orbit_interact"
   /** An episode opened from the orbit rather than the list below it. */

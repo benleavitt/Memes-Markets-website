@@ -18,19 +18,15 @@ export const metadata: Metadata = {
 
 const OUTCOMES = {
   /**
-   * Two success states, because Substack has two. `ok` is the one this
-   * publication actually produces: no double opt-in, so the subscriber is live
-   * immediately and no email is sent. `confirm` is what a publication with
-   * double opt-in returns. The route picks between them from Substack's own
-   * `requires_confirmation` — see lib/newsletter.ts.
+   * "Recorded", not "subscribed". The address is written to a sheet the show
+   * controls and imported into Substack in batches — see lib/newsletter.ts for
+   * why it cannot go straight there. Promising a subscription that has not
+   * happened yet is the failure this page already made once, in the other
+   * direction, by describing a confirmation email nobody was ever sent.
    */
   ok: {
-    heading: "You're subscribed",
-    body: "You'll get the next issue in your inbox. There is no confirmation email to look for.",
-  },
-  confirm: {
-    heading: "Check your inbox",
-    body: "Substack has sent a confirmation link. The subscription is not active until you click it.",
+    heading: "You're on the list",
+    body: "New readers are added to the newsletter before each issue goes out, so you'll get the next one. There is no confirmation email to look for.",
   },
   invalid: {
     heading: "That address did not look right",
@@ -38,21 +34,19 @@ const OUTCOMES = {
   },
   busy: {
     heading: "That is a lot of tries",
-    body: "The signup form is rate limited. Give it a few minutes and go again — nothing is wrong with your address.",
+    body: "The signup box is rate limited. Give it a few minutes and go again — nothing is wrong with your address.",
   },
   error: {
     heading: "That did not go through",
-    body: "Substack could not take the signup just now. Nothing was saved, so please try again.",
+    body: "The address was not saved, so please try again in a moment.",
   },
   /**
-   * A bare visit, with no state at all. This used to fall through to `error`,
-   * which told someone who had not submitted anything that their signup had
-   * failed — inventing a problem rather than reporting one. Nobody arrives here
-   * on purpose, but the page should not lie to them when they do.
+   * A bare visit, with no state at all. Falling through to `error` would tell
+   * somebody who submitted nothing that their signup had failed.
    */
   none: {
     heading: "Nothing to report",
-    body: "This page shows the result of a newsletter signup. The form is in the footer of every page.",
+    body: "This page shows the result of a newsletter signup. The box is in the footer of every page.",
   },
 } as const;
 

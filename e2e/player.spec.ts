@@ -434,10 +434,23 @@ test.describe("home", () => {
   });
 
   /**
+   * The newsletter box.
+   *
    * Deliberately only exercises the address the route rejects locally, so the
    * suite never posts to Substack. Everything up to that point — the form, the
-   * fetch, the route, the error rendering — is the same code path a real signup
-   * takes; only the upstream call is skipped.
+   * fetch, the route, the guards, the error rendering — is the same code path a
+   * real signup takes; only the upstream call is skipped.
+   *
+   * This is our own form rather than Substack's embed, which was tried and
+   * dropped: the frame is cross-origin, so none of the site's styling reaches
+   * inside it, and it renders in Substack's default serif with their orange
+   * accent. Losing the design was not worth the automation.
+   *
+   * NOTE, and it is the whole state of this feature: a real address does NOT
+   * currently reach Substack. Cloudflare bot management blocks server-side POSTs
+   * to their endpoint — measured, see apiNotServedHere in lib/newsletter.ts. This
+   * test passes because it never gets that far, which is exactly why the comment
+   * is here rather than a green tick being taken as proof the feature works.
    */
   test("the newsletter box reports a bad address without leaving the page", async ({
     page,
@@ -606,6 +619,41 @@ test.describe("seo", () => {
     expect(new URL(page.url()).pathname).toBe("/");
     // Followed a redirect rather than being served in place.
     expect(response?.request().redirectedFrom()).not.toBeNull();
+  });
+});
+
+/**
+ * The route from the info panel to the partnership page.
+ *
+ * The panel is where somebody works out what the show is, which is the moment a
+ * sponsor decides whether to ask — and the only way there used to be the footer,
+ * past the whole page and behind a dialog they would have to close first.
+ *
+ * The subtle part is not the link, it is the exit. MoreInfo locks the document
+ * scroll while the dialog is up and releases it in an effect cleanup. Navigating
+ * away from inside the dialog is the one path where that cleanup has to fire on
+ * unmount rather than on a `close` event, and if it does not, the visitor lands
+ * on /partner unable to scroll — a page that looks fine and simply will not move.
+ */
+test.describe("partner route", () => {
+  test("the info panel leads to /partner, and the page scrolls when it gets there", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "More info" }).click();
+
+    const panel = page.locator("dialog.mm-panel");
+    await expect(panel).toBeVisible();
+    await expect(page.locator("html")).toHaveCSS("overflow", "hidden");
+
+    await panel.getByRole("link", { name: /partner with us/i }).click();
+
+    await expect(page).toHaveURL(/\/partner$/);
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+
+    // The scroll lock came off with the dialog.
+    await expect(page.locator("html")).not.toHaveCSS("overflow", "hidden");
+    await expect(panel).toHaveCount(0);
   });
 });
 

@@ -68,7 +68,9 @@ const csp = [
   // The Twitch player's own requests happen inside the iframe, under its own
   // origin, so they are not governed by this.
   `connect-src 'self' ${GA_HOSTS.join(" ")}${isDev ? " ws: wss:" : ""}`,
-  "frame-src https://player.twitch.tv https://*.twitch.tv",
+  // Twitch for the live player; Substack for the newsletter signup, which is
+  // their embed page rather than a form of ours — see components/ui/SubstackEmbed.
+  "frame-src https://player.twitch.tv https://*.twitch.tv https://*.substack.com",
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",

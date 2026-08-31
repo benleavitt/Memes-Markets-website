@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { ImageResponse } from "next/og";
 
 export const OG_SIZE = { width: 1200, height: 630 };
@@ -32,6 +34,35 @@ async function googleFont(family: string, weight: number): Promise<ArrayBuffer |
     return null;
   }
 }
+
+/**
+ * The brand mark, inlined as a data URI.
+ *
+ * Read from disk rather than fetched: satori has no network of its own, and
+ * pointing it at our own /brand/mm-logo.png would make every social card depend
+ * on the site being up to render a picture of the site. The OG routes run on the
+ * Node runtime — neither exports `runtime`, and next/og defaults to Node — so the
+ * filesystem is there.
+ *
+ * Read once at module load. It is 20kB, and the alternative is re-reading it for
+ * every card.
+ *
+ * Falls back to null on any failure, and the card then draws the plain red dot it
+ * used to. Same bargain as the fonts above: a slightly off-brand preview beats a
+ * build that dies over a social image.
+ */
+const LOGO: string | null = (() => {
+  try {
+    const png = readFileSync(join(process.cwd(), "public", "brand", "mm-logo.png"));
+    return `data:image/png;base64,${png.toString("base64")}`;
+  } catch {
+    return null;
+  }
+})();
+
+/** Source is 522x640, so height drives it and the width follows the ratio. */
+const LOGO_H = 44;
+const LOGO_W = Math.round((522 / 640) * LOGO_H);
 
 export async function renderOg({
   eyebrow,
@@ -82,10 +113,16 @@ export async function renderOg({
         fontFamily: body ? "Archivo" : "sans-serif",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-        <div
-          style={{ width: 10, height: 10, borderRadius: 999, background: "#FF0000" }}
-        />
+      <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+        {/* The mark, where a red dot used to stand in for one. The dot is kept as
+            the fallback so the row never collapses if the file cannot be read. */}
+        {LOGO ? (
+          <img src={LOGO} width={LOGO_W} height={LOGO_H} alt="" />
+        ) : (
+          <div
+            style={{ width: 10, height: 10, borderRadius: 999, background: "#FF0000" }}
+          />
+        )}
         <div
           style={{
             color: "#FF0000",

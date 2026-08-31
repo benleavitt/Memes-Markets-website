@@ -5,6 +5,10 @@ Who owns what, what still depends on whom, and what to do first.
 Written at the point the repository was transferred from `Ochanda-Charles` to
 `benleavitt`. Keep it current — it is the only place some of this is written down.
 
+**Status:** the transfer is complete and the site is live on
+**https://www.memesandmarkets.com**. Two things are outstanding and both are
+settings changes rather than code — see "Outstanding after the domain move".
+
 ## Ownership
 
 | | Owner | Notes |
@@ -75,7 +79,7 @@ With the Sheet on Charles's personal account, those statements do not describe t
 actual arrangement, and a deletion request cannot be actioned without him. The
 options are to move the Sheet to a Memes & Markets Google account and redeploy the
 Apps Script (about fifteen minutes — the steps are in
-[`scripts/partner-sheet.gs`](scripts/partner-sheet.gs), and it produces a new
+[`scripts/sheet-webhook.gs`](scripts/sheet-webhook.gs), and it produces a new
 `PARTNER_SHEET_WEBHOOK` and `PARTNER_SHEET_SECRET`), or to reword the privacy page
 so it matches reality. Until one of those happens the page overstates the position.
 
@@ -98,6 +102,34 @@ Things that will need him even after the transfer:
   Vercel and in the repo's Actions secrets
 - The **enquiries Sheet**, for reading leads, or for any data deletion request
 - The **Figma file**, if it turns out to be on his account
+
+## Outstanding after the domain move
+
+Both of these are configuration, not code. The repo is already correct for both.
+
+### 1. `NEXT_PUBLIC_SITE_URL` is not set
+
+The site serves on the custom domain but still declares the `.vercel.app`
+address as canonical, in its sitemap, and in its robots `Sitemap:` line — so
+search engines consolidate onto the wrong host. Set
+`NEXT_PUBLIC_SITE_URL=https://www.memesandmarkets.com` in Vercel, **Production
+only**, and redeploy. Full steps in [`DEPLOY.md`](DEPLOY.md).
+
+### 2. The Substack still owns memesandmarkets.com
+
+The publication has `www.memesandmarkets.com` configured as its custom domain
+with `custom_domain_optional = False`, so Substack enforces a domain the site now
+occupies. The feed 301s here and 404s; the signup endpoint does not redirect at
+all — Substack answers 403 with an HTML error page. Both verified live.
+
+**Newsletter signups do not work today, and the recent-posts strip renders
+nothing.** Neither is loud: the form shows a polite error and the strip is built
+to disappear when the feed is quiet.
+
+Fix it in Substack → Settings → Domain: remove the custom domain, or repoint the
+publication at a subdomain like `newsletter.memesandmarkets.com`. The code
+already points at `memesandmarketspod.substack.com` and needs no change unless
+you pick a subdomain, in which case set `SUBSTACK_PUBLICATION_URL`.
 
 ## First things to do after accepting the transfer
 

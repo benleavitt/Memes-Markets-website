@@ -5,7 +5,7 @@ import { useId, useState } from "react";
 type State =
   | { status: "idle" }
   | { status: "sending" }
-  | { status: "done"; requiresConfirmation: boolean }
+  | { status: "done" }
   | { status: "failed"; message: string; field: boolean };
 
 /**
@@ -48,13 +48,9 @@ export function NewsletterForm() {
         ok?: boolean;
         message?: string;
         field?: boolean;
-        requiresConfirmation?: boolean;
       };
       if (body.ok) {
-        setState({
-          status: "done",
-          requiresConfirmation: body.requiresConfirmation === true,
-        });
+        setState({ status: "done" });
         form.reset();
         return;
       }
@@ -73,32 +69,20 @@ export function NewsletterForm() {
   };
 
   if (state.status === "done") {
-    // Which of these is true is Substack's call, not ours — it reports it per
-    // signup. This publication currently runs without a confirmation step, so
-    // the second branch is what people actually see; the first is here so the
-    // copy stays honest if double opt-in is ever switched on.
+    /*
+     * "On the list", NOT "subscribed", and that distinction is the honest one.
+     *
+     * The address has been written to a sheet the show controls; it reaches
+     * Substack when somebody imports the batch. Claiming "you're subscribed"
+     * would be a confident lie of exactly the kind this box has told before — it
+     * once promised a confirmation email that was never going to arrive. Say
+     * what actually happened instead.
+     */
     return (
-      <p
-        className="type-body-md mt-4"
-        // Not aria-live: this replaces the form, so focus and reading order land
-        // here anyway, and a live region would announce it a second time.
-        style={{ color: "var(--mm-text)" }}
-      >
-        {state.requiresConfirmation ? (
-          <>
-            <strong style={{ color: "var(--mm-accent)" }}>Check your inbox.</strong>{" "}
-            Substack has sent a confirmation link — the subscription is not active until
-            you click it.
-          </>
-        ) : (
-          <>
-            <strong style={{ color: "var(--mm-accent)" }}>
-              You&rsquo;re subscribed.
-            </strong>{" "}
-            You&rsquo;ll get the next issue in your inbox — there is no confirmation email
-            to look for.
-          </>
-        )}
+      <p className="type-body-md mt-4" style={{ color: "var(--mm-text)" }}>
+        <strong style={{ color: "var(--mm-accent)" }}>You&rsquo;re on the list.</strong>{" "}
+        New readers are added to the newsletter before each issue goes out, so
+        you&rsquo;ll get the next one.
       </p>
     );
   }

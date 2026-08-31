@@ -27,8 +27,8 @@ import { useEffect, useRef } from "react";
  * `usePathname` only, never `useSearchParams`. Reading search params in a
  * component this high in the tree opts the whole app out of static rendering in
  * Next 15, which is a real cost for this site — and the only route here that
- * carries a query string is /subscribed?state=, which is noindex and reports
- * the outcome of a form rather than a page anyone browses to.
+ * carries a query string is /partner, where it is a UTM tag at most and not a
+ * distinct page.
  *
  * Nothing is sent without a measurement id: app/layout.tsx does not mount this
  * without one, and trackPageView goes through `window.gtag?.()` regardless.
