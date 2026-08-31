@@ -434,43 +434,37 @@ test.describe("home", () => {
   });
 
   /**
-   * The newsletter box.
+   * The newsletter signup.
    *
-   * Deliberately only exercises the address the route rejects locally, so the
-   * suite never posts to Substack. Everything up to that point — the form, the
-   * fetch, the route, the guards, the error rendering — is the same code path a
-   * real signup takes; only the upstream call is skipped.
+   * There was a form here once, posting to /api/subscribe, which proxied to
+   * Substack. That is gone and is not coming back in that shape: Substack has no
+   * supported API for adding a subscriber, and the undocumented endpoint behind
+   * their embed sits behind Cloudflare bot management, which blocks every
+   * server-side POST. A framed embed and a collect-then-import sheet were both
+   * built and both rejected — the first took the site's design with it, the
+   * second put a standing manual chore on somebody twice a week.
    *
-   * This is our own form rather than Substack's embed, which was tried and
-   * dropped: the frame is cross-origin, so none of the site's styling reaches
-   * inside it, and it renders in Substack's default serif with their orange
-   * accent. Losing the design was not worth the automation.
-   *
-   * NOTE, and it is the whole state of this feature: a real address does NOT
-   * currently reach Substack. Cloudflare bot management blocks server-side POSTs
-   * to their endpoint — measured, see apiNotServedHere in lib/newsletter.ts. This
-   * test passes because it never gets that far, which is exactly why the comment
-   * is here rather than a green tick being taken as proof the feature works.
+   * So the assertion is deliberately small: the block sends people somewhere real
+   * and off-site. The failure it guards against is a signup that looks available
+   * and quietly goes nowhere, which is what every version of this has done.
    */
-  test("the newsletter box reports a bad address without leaving the page", async ({
-    page,
-  }) => {
+  test("the newsletter block links out to Substack", async ({ page }) => {
     await page.goto("/");
 
-    const form = page.locator("footer form");
-    await form.scrollIntoViewIfNeeded();
-    await expect(form.getByRole("button", { name: "Subscribe" })).toBeVisible();
+    const cta = page
+      .locator("footer")
+      .getByRole("link", { name: /subscribe on substack/i });
+    await cta.scrollIntoViewIfNeeded();
+    await expect(cta).toBeVisible();
 
-    await form.getByPlaceholder("name@email.com").fill("definitely-not-an-email");
-    await form.getByRole("button", { name: "Subscribe" }).click();
+    // Off-site, and to the profile rather than the custom domain the site now
+    // occupies — pointing it at memesandmarkets.com would be a link to this page.
+    await expect(cta).toHaveAttribute("href", /^https:\/\/substack\.com\/@/);
+    await expect(cta).toHaveAttribute("target", "_blank");
+    await expect(cta).toHaveAttribute("rel", /noopener/);
 
-    await expect(form.getByText(/does not look like an email/i)).toBeVisible();
-    // Still on the homepage: the fetch answered in place rather than navigating.
-    await expect(page).toHaveURL(/localhost:3000\/$/);
-    await expect(form.getByPlaceholder("name@email.com")).toHaveAttribute(
-      "aria-invalid",
-      "true",
-    );
+    // No form left behind to half-work.
+    await expect(page.locator("footer form")).toHaveCount(0);
   });
 
   test("does not scroll sideways at 390px", async ({ page }) => {

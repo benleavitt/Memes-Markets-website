@@ -162,7 +162,7 @@ touches `content/channel-stats-fallback.json`. A commit touching only
 
 ## Partnership enquiries
 
-`scripts/sheet-webhook.gs` carries the Apps Script and its setup, in the repo so
+`scripts/partner-sheet.gs` carries the Apps Script and its setup, in the repo so
 the thing receiving enquiries is version-controlled next to the form that sends
 them. Roughly: create a sheet, paste the script, set `SHARED_SECRET`, deploy as
 a web app that "Anyone" can reach, then put the `/exec` URL and the same secret

@@ -107,7 +107,7 @@ export async function POST(request: Request) {
       headers: { "content-type": "application/json" },
       // The secret travels in the body, not a header: Apps Script drops custom
       // request headers across the 302 it answers with, so a header-based check
-      // would reject every genuine write. See scripts/sheet-webhook.gs.
+      // would reject every genuine write. See scripts/partner-sheet.gs.
       body: JSON.stringify({
         ...checked.enquiry,
         secret: process.env.PARTNER_SHEET_SECRET ?? "",

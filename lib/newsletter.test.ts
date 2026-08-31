@@ -1,36 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { looksLikeEmail, redirectedAwayFrom } from "./newsletter";
+import { redirectedAwayFrom } from "./newsletter";
 
 /**
- * What survives now the signup writes to a sheet instead of Substack.
- *
- * interpret(), redactAddresses() and the fixtures pinning Substack's response
- * shapes went with the API call — nothing parses their responses any more. The
- * local email check still guards the route, and redirectedAwayFrom still tells
- * the posts strip when the publication is sending it to the wrong host.
+ * All that is left to test here. The signup is a link now — no form, no route,
+ * no address validation, nothing to parse from Substack. What remains is the
+ * check that tells the recent-posts strip it is being answered by the wrong
+ * host, which is still live and still easy to break.
  */
-
-describe("looksLikeEmail", () => {
-  it("accepts ordinary addresses, including tags and subdomains", () => {
-    for (const ok of [
-      "a@b.co",
-      "keith@memesandmarkets.com",
-      "ben+markets@mail.example.co.uk",
-    ]) {
-      expect(looksLikeEmail(ok)).toBe(true);
-    }
-  });
-
-  it("rejects the obvious junk that is not worth a round trip", () => {
-    for (const bad of ["", "   ", "nope", "no-at-sign.com", "a@b", "two@@at.com"]) {
-      expect(looksLikeEmail(bad)).toBe(false);
-    }
-  });
-
-  it("ignores surrounding whitespace, which people paste in constantly", () => {
-    expect(looksLikeEmail("  someone@example.com  ")).toBe(true);
-  });
-});
 
 /**
  * The failure that took the newsletter down at the domain move: the publication

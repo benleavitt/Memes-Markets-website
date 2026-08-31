@@ -25,12 +25,10 @@ const ROUTES = [
   "/partner",
   "/privacy",
   "/terms",
-  "/subscribed",
   // The API routes matter as much as the pages, and are easier to forget: an
   // uncompiled route pays its build cost inside whichever assertion reaches it
   // first, and the failure names the assertion rather than the route.
   "/api/live-status",
-  "/api/subscribe",
 ];
 
 /** Roughly a minute. The server may still be booting when this starts. */
