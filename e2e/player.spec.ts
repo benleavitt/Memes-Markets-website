@@ -579,13 +579,18 @@ test.describe("navigation", () => {
     await expect(page).toHaveURL(/\/terms$/);
   });
 
-  test("the footer credits the developer and links their contact section", async ({
+  test("the footer credits the developer and links their contact page", async ({
     page,
   }) => {
     await page.goto("/");
     const credit = page.locator("footer").getByRole("link", { name: /site by/i });
     await expect(credit).toBeVisible();
-    await expect(credit).toHaveAttribute("href", /ochanda-charles\.me\/#contact$/);
+    // A page of its own, not the #contact fragment this used to point at. The
+    // path is pinned rather than just the host: the whole argument for the link
+    // is that it lands on the contact page instead of the portfolio's front
+    // door, and a credit quietly degraded to the homepage would still pass a
+    // host-only assertion.
+    await expect(credit).toHaveAttribute("href", /ochanda-charles\.me\/contact$/);
     await expect(credit).toHaveAttribute("target", "_blank");
   });
 });
