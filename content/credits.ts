@@ -5,12 +5,10 @@
  * the SHOW. This is about who made the thing the show sits in, and the two have
  * no reason to change together.
  *
- * The link goes to the contact section specifically, not the portfolio's front
+ * The link goes to the contact page specifically, not the portfolio's front
  * page. Someone clicking a credit in a footer has already decided they are
  * interested; landing them at the top of a site they then have to scroll and
- * hunt through is how that interest gets lost. `#contact` on that site is a
- * section headed "Let's Build Together" with a message form and the usual
- * profiles, which is exactly where the click was aiming.
+ * hunt through is how that interest gets lost.
  */
 export const DEVELOPER = {
   /**
@@ -20,8 +18,9 @@ export const DEVELOPER = {
    */
   name: "Charles",
   /**
-   * The fragment is load-bearing — see above. Both the apex and www answer 200,
-   * so this is the address as given rather than a guess at the canonical one.
+   * A page of its own, not the `#contact` fragment this used to point at. Both
+   * answer 200; this is the address as given rather than a guess at the
+   * canonical one.
    */
-  href: "https://www.ochanda-charles.me/#contact",
+  href: "https://www.ochanda-charles.me/contact",
 } as const;
