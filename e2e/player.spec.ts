@@ -467,6 +467,54 @@ test.describe("home", () => {
     await expect(page.locator("footer form")).toHaveCount(0);
   });
 
+  /**
+   * Memes & Markets HQ, the members-only Discord sold on Whop.
+   *
+   * Three routes to it — the card on Home, the info panel, and the footer on
+   * every page — asserted together, because the failure worth catching is one
+   * of them drifting: the listing renamed on Whop, fixed in one place, still
+   * dead from the other two. All three read content/community.ts, so today they
+   * cannot disagree; this is what notices the day one stops.
+   *
+   * The path is pinned, not just the host. A link to Whop's front page would
+   * look fine and sell nothing.
+   */
+  test("the HQ links out to the Whop listing from home, the panel and the footer", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const listing =
+      /^https:\/\/whop\.com\/memes-and-markets\/memes-and-markets-hq-membership\/?$/;
+
+    const onPage = [
+      page
+        .getByRole("region", { name: "The community" })
+        .getByRole("link", { name: /join the hq/i }),
+      page.locator("footer").getByRole("link", { name: /join the hq/i }),
+    ];
+    for (const link of onPage) {
+      await expect(link).toHaveAttribute("href", listing);
+      await expect(link).toHaveAttribute("target", "_blank");
+      await expect(link).toHaveAttribute("rel", /noopener/);
+      await expect(link).toHaveAttribute("data-analytics", "cta_join_hq");
+    }
+
+    // Not in the hero's platform bar. That row is where to find the show, free;
+    // a paid community in it would read as one more place to listen.
+    await expect(
+      page
+        .getByRole("navigation", { name: "Where to find Memes & Markets" })
+        .locator('a[href*="whop.com"]'),
+    ).toHaveCount(0);
+
+    await page.getByRole("button", { name: "More info" }).click();
+    const inPanel = page
+      .locator("dialog.mm-panel")
+      .getByRole("link", { name: /join the hq/i });
+    await expect(inPanel).toBeVisible();
+    await expect(inPanel).toHaveAttribute("href", listing);
+  });
+
   test("does not scroll sideways at 390px", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");

@@ -1,6 +1,8 @@
 import { CookieSettingsLink } from "@/components/ui/CookieSettingsLink";
+import { ExternalArrow } from "@/components/ui/ExternalArrow";
 import { NewsletterCta } from "@/components/ui/NewsletterCta";
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
+import { HQ } from "@/content/community";
 import { DEVELOPER } from "@/content/credits";
 import {
   DISCLAIMER,
@@ -68,7 +70,7 @@ export function Footer() {
               column meant the handle broke to its own line anyway, but as an
               overflow rather than a decision — indented under the buttons and
               running past their right edge. Stacking it says the same thing
-              deliberately: two pages, then where to follow the show. */}
+              deliberately: two pages and the HQ, then where to follow the show. */}
           <nav aria-label="Site" className="flex flex-col items-start gap-3">
             <div className="flex flex-wrap items-center gap-3">
               {[
@@ -102,6 +104,46 @@ export function Footer() {
                 </Link>
               ))}
             </div>
+
+            {/* The HQ, in the same bordered vocabulary as About and Partner —
+                it is the other place here somebody would go on purpose. Two
+                things tell it apart as leaving the site rather than another
+                page: the Discord mark in front, and the arrow turned up and out,
+                the glyph every external link on the site already uses.
+                ITS OWN ROW, not a third item in the row above. In that row it
+                made the column as wide as three buttons, and the lockup beside
+                it paid: the schedule line broke to leave "12PM ET" alone on a
+                second line. Here the column is only as wide as About + Partner,
+                which is what it was before.
+                The site-wide route; Home also has the full card. */}
+            <a
+              href={HQ.href}
+              target="_blank"
+              rel="noreferrer noopener"
+              data-analytics="cta_join_hq"
+              data-analytics-surface="footer"
+              className="type-label-lg group inline-flex items-center gap-2 rounded-[10px] border px-4 py-2.5 uppercase no-underline transition-colors duration-150 hover:border-[var(--mm-accent)] hover:bg-[var(--mm-surface-raised)]"
+              style={{
+                background: "var(--mm-surface)",
+                borderColor: "var(--mm-border)",
+                color: "var(--mm-text)",
+              }}
+            >
+              <PlatformIcon id="discord" size={16} />
+              {/* Visible text first, so the accessible name contains it
+                  (WCAG 2.5.3) — an aria-label reading "Join Memes & Markets
+                  HQ…" would not match what a voice-control user says. */}
+              <span>
+                Join the HQ
+                <span className="sr-only">, the members-only Discord, on Whop</span>
+              </span>
+              <span
+                className="transition-colors duration-150 group-hover:text-[var(--mm-accent)]"
+                style={{ color: "var(--mm-text-3)" }}
+              >
+                <ExternalArrow />
+              </span>
+            </a>
 
             {/* The one place the show's handle is printed rather than drawn as
                 an icon, so it is the show's own — not the clips channel, which

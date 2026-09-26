@@ -1,6 +1,8 @@
+import { ExternalArrow } from "@/components/ui/ExternalArrow";
 import { LiveCta } from "@/components/ui/LiveCta";
 import { NewsletterCta } from "@/components/ui/NewsletterCta";
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
+import { HQ } from "@/content/community";
 import { HOST_LIST } from "@/content/hosts";
 import { PLATFORMS } from "@/content/platforms";
 import { PRESS_ITEMS, type PressItem } from "@/content/press";
@@ -138,6 +140,25 @@ export function InfoPanelContent() {
               <path d="M3 8h9M8.5 4l4 4-4 4" />
             </svg>
           </Link>
+          {/* The panel is where somebody decides they like the show, which is
+              the moment the HQ is for. Same weight as Partner beside it — a
+              text link, not a button — so the row's one filled CTA stays the
+              live one. The arrow points out because this one leaves the site. */}
+          <a
+            href={HQ.href}
+            target="_blank"
+            rel="noreferrer noopener"
+            data-analytics="cta_join_hq"
+            data-analytics-surface="info_panel"
+            className="type-label-lg inline-flex items-center gap-2 uppercase underline decoration-[var(--mm-border-strong)] underline-offset-4 transition-colors duration-150 hover:decoration-[var(--mm-accent)]"
+            style={{ color: "var(--mm-text)" }}
+          >
+            <span>
+              Join the HQ
+              <span className="sr-only">, the members-only Discord, on Whop</span>
+            </span>
+            <ExternalArrow />
+          </a>
         </div>
         <ul className="flex flex-wrap items-center gap-2">
           {PLATFORMS.map((p) => (
