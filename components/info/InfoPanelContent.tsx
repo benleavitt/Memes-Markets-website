@@ -154,7 +154,7 @@ export function InfoPanelContent() {
             style={{ color: "var(--mm-text)" }}
           >
             <span>
-              Join the HQ
+              Join the community
               <span className="sr-only">, the members-only Discord, on Whop</span>
             </span>
             <ExternalArrow />

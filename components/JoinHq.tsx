@@ -80,7 +80,7 @@ export function JoinHq() {
               className="mm-cta-light type-label-lg inline-flex items-center gap-3 rounded-[10px] px-6 py-3.5 uppercase no-underline"
             >
               <PlatformIcon id="discord" size={18} />
-              Join the HQ
+              Join the community
               <ExternalArrow />
             </a>
             {/* Where the click goes, said before it happens. Nobody should find

@@ -489,8 +489,8 @@ test.describe("home", () => {
     const onPage = [
       page
         .getByRole("region", { name: "The community" })
-        .getByRole("link", { name: /join the hq/i }),
-      page.locator("footer").getByRole("link", { name: /join the hq/i }),
+        .getByRole("link", { name: /join the community/i }),
+      page.locator("footer").getByRole("link", { name: /join the community/i }),
     ];
     for (const link of onPage) {
       await expect(link).toHaveAttribute("href", listing);
@@ -510,7 +510,7 @@ test.describe("home", () => {
     await page.getByRole("button", { name: "More info" }).click();
     const inPanel = page
       .locator("dialog.mm-panel")
-      .getByRole("link", { name: /join the hq/i });
+      .getByRole("link", { name: /join the community/i });
     await expect(inPanel).toBeVisible();
     await expect(inPanel).toHaveAttribute("href", listing);
   });

@@ -22,7 +22,12 @@ export function Footer() {
   return (
     <footer className="mt-auto border-t" style={{ borderColor: "var(--mm-border)" }}>
       <div className="mx-auto flex max-w-[1200px] flex-col gap-10 px-6 pt-16 pb-14">
-        <div className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
+        {/* A row from `lg`, not `md`. Between 768 and 1023 the seven platform
+            buttons, which never shrink, left the lockup about 110px: "Memes &
+            Markets" broke in two and the schedule ran to five lines. The HQ
+            button made the nav wider still. Stacked, as on a phone, every part
+            gets the full width in that range. */}
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
           {/* The lockup goes home as well as the header one. It is the other
               place people click by reflex, and on a long page it is the closer
               of the two by the time anyone is looking for it. */}
@@ -113,8 +118,9 @@ export function Footer() {
                 ITS OWN ROW, not a third item in the row above. In that row it
                 made the column as wide as three buttons, and the lockup beside
                 it paid: the schedule line broke to leave "12PM ET" alone on a
-                second line. Here the column is only as wide as About + Partner,
-                which is what it was before.
+                second line. Here the column is only as wide as the widest row.
+                whitespace-nowrap because a label that breaks inside its own
+                border — "JOIN THE / COMMUNITY" — reads as a rendering fault.
                 The site-wide route; Home also has the full card. */}
             <a
               href={HQ.href}
@@ -122,7 +128,7 @@ export function Footer() {
               rel="noreferrer noopener"
               data-analytics="cta_join_hq"
               data-analytics-surface="footer"
-              className="type-label-lg group inline-flex items-center gap-2 rounded-[10px] border px-4 py-2.5 uppercase no-underline transition-colors duration-150 hover:border-[var(--mm-accent)] hover:bg-[var(--mm-surface-raised)]"
+              className="type-label-lg group inline-flex items-center gap-2 whitespace-nowrap rounded-[10px] border px-4 py-2.5 uppercase no-underline transition-colors duration-150 hover:border-[var(--mm-accent)] hover:bg-[var(--mm-surface-raised)]"
               style={{
                 background: "var(--mm-surface)",
                 borderColor: "var(--mm-border)",
@@ -134,7 +140,7 @@ export function Footer() {
                   (WCAG 2.5.3) — an aria-label reading "Join Memes & Markets
                   HQ…" would not match what a voice-control user says. */}
               <span>
-                Join the HQ
+                Join the community
                 <span className="sr-only">, the members-only Discord, on Whop</span>
               </span>
               <span
@@ -162,9 +168,9 @@ export function Footer() {
 
           {/* shrink-0 and no wrap: seven buttons that break to 6 + 1 read as a
               mistake rather than a row. The nav beside it wraps instead, which
-              costs nothing because it is text. Below `md` the whole footer row
+              costs nothing because it is text. Below `lg` the whole footer row
               is a column and each of these gets the full width anyway. */}
-          <ul className="flex shrink-0 flex-wrap items-center gap-2 md:flex-nowrap">
+          <ul className="flex shrink-0 flex-wrap items-center gap-2 lg:flex-nowrap">
             {PLATFORMS.map((p) => (
               <li key={p.id}>
                 <a
