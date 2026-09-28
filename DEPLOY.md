@@ -13,6 +13,14 @@ own env vars kept in sync by hand, and they drift.
 `vercel.json` limits automatic deployments to `main` and `staging`, so pushing a
 scratch branch does not spend build minutes.
 
+The `"**": false` line is what does that, and it is easy to mistake for noise.
+Vercel treats any branch NOT listed as `true`, so listing only `main` and
+`staging` blocked nothing — every feature branch got its own deployment until
+it was added. `**` rather than `*` because the patterns are minimatch, and `*`
+stops at a `/`, which would let `feat/anything` through. A branch matching
+several rules deploys if any of them is `true`, so the two named branches still
+win. JSON takes no comments, so the explanation lives here.
+
 ## First-time setup
 
 1. **Import the repo.** vercel.com → Add New → Project → import

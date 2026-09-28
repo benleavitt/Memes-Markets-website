@@ -1,3 +1,4 @@
+import { JoinHq } from "@/components/JoinHq";
 import { NewsletterPosts } from "@/components/NewsletterPosts";
 import { OrbitSphere } from "@/components/hero/OrbitSphere";
 import { PlatformBar } from "@/components/hero/PlatformBar";
@@ -113,6 +114,10 @@ export default async function Home() {
           the sphere the hero is built around, and the hero stopped reading as a
           hero. The numbers land better once the show has introduced itself. */}
       <SocialProof stats={stats} />
+
+      {/* The members-only Discord. After the audience on purpose — see the note
+          at the top of JoinHq. */}
+      <JoinHq />
 
       {/* Renders nothing unless the newsletter is actually running — see
           FRESH_DAYS in lib/posts.ts. */}

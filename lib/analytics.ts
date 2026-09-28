@@ -24,6 +24,12 @@ export type AnalyticsEvent =
   | "cta_watch_live"
   /** The route from the info panel through to the partnership page. */
   | "cta_partner"
+  /**
+   * Out to the HQ membership on Whop. `surface` says which of the three routes
+   * was taken — home, info_panel or footer. A click, NOT a membership: Whop owns
+   * the checkout, and nothing on this site hears whether it completed.
+   */
+  | "cta_join_hq"
   /** Did anyone touch the sphere, and how — drag, keyboard, or scroll. */
   | "orbit_interact"
   /** An episode opened from the orbit rather than the list below it. */

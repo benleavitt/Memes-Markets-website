@@ -691,3 +691,51 @@
 .mm-hero-tagline {
   font-size: clamp(17px, 1.45vw, 26px);
 }
+
+/*
+ * Memes & Markets HQ — the card on Home and its button.
+ *
+ * The card takes the red bloom the backdrop and the info panel already use, from
+ * one corner, so it reads as part of the page rather than an ad slotted into it.
+ * A gradient stop, not a blur — the same rule as the backdrop.
+ */
+.mm-hq {
+  background: radial-gradient(120% 90% at 0% 0%, var(--mm-accent-glow), transparent 60%),
+    var(--mm-surface);
+}
+
+/*
+ * The HQ button is WHITE, and that is the point of it.
+ *
+ * Red fill is spoken for: it is the hero's one CTA and it means live. The
+ * bordered dark button is the newsletter's, and at that weight a paid community
+ * would sit below the fold looking like a footnote. White is the third colour
+ * the brand has, it comes from the design system's own inverse surface, and on
+ * this canvas it is the one fill nothing else is using.
+ *
+ * Contrast is not a concern in this direction: --mm-text-on-light on white is
+ * 19:1, so the label can stay at the ordinary 14px button size.
+ */
+.mm-cta-light {
+  background: var(--mm-surface-inverse);
+  color: var(--mm-text-on-light);
+  transition: background-color 150ms, transform 150ms;
+}
+.mm-cta-light:hover,
+.mm-cta-light:focus-visible {
+  background: var(--mm-surface-light);
+  transform: translateY(-1px);
+}
+.mm-cta-light:active {
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .mm-cta-light {
+    transition: background-color 150ms;
+  }
+  .mm-cta-light:hover,
+  .mm-cta-light:focus-visible,
+  .mm-cta-light:active {
+    transform: none;
+  }
+}

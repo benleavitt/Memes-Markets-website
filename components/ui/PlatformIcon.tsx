@@ -5,7 +5,9 @@ import type { PlatformId } from "@/content/platforms";
  * Decorative by default: the surrounding link carries the accessible name, so
  * announcing the icon too would make a screen reader say every platform twice.
  */
-const PATHS: Record<PlatformId | "highlights" | "tiktok", string[]> = {
+type IconId = PlatformId | "highlights" | "tiktok" | "discord";
+
+const PATHS: Record<IconId, string[]> = {
   youtube: [
     "M23.5 6.9a3 3 0 0 0-2.1-2.1C19.5 4.3 12 4.3 12 4.3s-7.5 0-9.4.5A3 3 0 0 0 .5 6.9C0 8.8 0 12 0 12s0 3.2.5 5.1a3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1c.5-1.9.5-5.1.5-5.1s0-3.2-.5-5.1zM9.5 15.6V8.4l6.3 3.6-6.3 3.6z",
   ],
@@ -31,6 +33,11 @@ const PATHS: Record<PlatformId | "highlights" | "tiktok", string[]> = {
   substack: [
     "M3 2h18v2.6H3V2zm0 5.2h18v2.6H3V7.2zM3 12.4 12 17l9-4.6V22l-9-4.6L3 22v-9.6z",
   ],
+  // Not a platform: the HQ membership lives on Discord, but it is sold through
+  // Whop and is not somewhere to find the show. See content/community.ts.
+  discord: [
+    "M20.32 4.37a19.8 19.8 0 0 0-4.89-1.52.07.07 0 0 0-.08.04c-.21.38-.44.87-.61 1.25a18.27 18.27 0 0 0-5.49 0 12.64 12.64 0 0 0-.62-1.25.08.08 0 0 0-.08-.04 19.74 19.74 0 0 0-4.89 1.52.07.07 0 0 0-.03.03C.53 9.05-.32 13.58.1 18.06a.08.08 0 0 0 .03.06 19.9 19.9 0 0 0 5.99 3.03.08.08 0 0 0 .08-.03c.46-.63.87-1.3 1.23-1.99a.08.08 0 0 0-.04-.11 13.1 13.1 0 0 1-1.87-.89.08.08 0 0 1-.01-.13c.13-.09.25-.19.37-.29a.07.07 0 0 1 .08-.01c3.93 1.79 8.18 1.79 12.06 0a.07.07 0 0 1 .08.01c.12.1.25.2.37.29a.08.08 0 0 1-.01.13c-.6.35-1.22.65-1.87.89a.08.08 0 0 0-.04.11c.36.7.77 1.36 1.23 1.99a.08.08 0 0 0 .08.03 19.84 19.84 0 0 0 6-3.03.08.08 0 0 0 .03-.06c.5-5.18-.84-9.67-3.55-13.66a.06.06 0 0 0-.03-.03zM8.02 15.33c-1.18 0-2.16-1.09-2.16-2.42s.96-2.42 2.16-2.42c1.21 0 2.18 1.1 2.16 2.42 0 1.33-.96 2.42-2.16 2.42zm7.97 0c-1.18 0-2.16-1.09-2.16-2.42s.96-2.42 2.16-2.42c1.21 0 2.18 1.1 2.16 2.42 0 1.33-.95 2.42-2.16 2.42z",
+  ],
   highlights: [
     "M23.5 6.9a3 3 0 0 0-2.1-2.1C19.5 4.3 12 4.3 12 4.3s-7.5 0-9.4.5A3 3 0 0 0 .5 6.9C0 8.8 0 12 0 12s0 3.2.5 5.1a3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1c.5-1.9.5-5.1.5-5.1s0-3.2-.5-5.1zM9.5 15.6V8.4l6.3 3.6-6.3 3.6z",
   ],
@@ -40,7 +47,7 @@ export function PlatformIcon({
   id,
   size = 20,
 }: {
-  id: PlatformId | "highlights" | "tiktok";
+  id: IconId;
   size?: number;
 }) {
   return (

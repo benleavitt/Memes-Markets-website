@@ -3,6 +3,7 @@
   "framework": "nextjs",
   "git": {
     "deploymentEnabled": {
+      "**": false,
       "main": true,
       "staging": true
     }
